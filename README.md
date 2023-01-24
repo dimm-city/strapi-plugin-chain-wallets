@@ -1,14 +1,30 @@
 # Chain Wallets Strapi Plugin
 
-Chain Wallets is a plugin for Strapi v4 that allows EVM smart contracts to be easily associated with a content-type.
+A Strapi v4 plugin that allows EVM smart contracts to be easily associated with content-types.
 
-The plugin allows you to:
+Here are some of the things Chain Wallets currently does:
 
-* Associate content-type to a smart contract
+* Associate content-types to a smart contracts
+* Automatically sync tokens to Strapi content types
+* Automatically sync token ownership in database
+* Associate a tokens with entities
+* Automatically configures an API endpoint to return token metadata
+* Protects metadata of unminted tokens preventing data leaks
 * Configure hooks for your content-type for:
     * Returning metadata
     * Creating new entity for a token
-* ...and more ... on the road map
+* ...and more to come!
+
+### Roadmap
+
+* Provide "Owns Token" policy to only allow token owners to call the controller action
+* Allow an initializer function to be specified for each contract
+* Create a "managed wallet" for and associate it with the current user
+* Allow users to associate existing wallets with their login
+* Import metadata for all tokens in a contract
+* Sync common 721 properties to contract entity
+* Mint a token from a managed wallet
+* Provide factory method to return an initialized EthersJS contract instance from the `plugin::chain-wallets.chain-contract` service
 
 ## Configuration
 
@@ -18,24 +34,5 @@ This section gives examples of how to chain wallets' features.
 * Assign entity service type to contract
 * Optionally specify a function name for the metadata extender function
 * Add function to the service that transforms the metadata for the token
-
-## Roadmap
-### Completed
-
-* Hook:ExtendMetadata - Allows a contract to specify a function to run to merge token metadata for tokens of that contract
-
-### In progress
-
-* Policy:OwnsToken - Check that the token associated with the current request is owned by the logged in user
-* Hook:OnTokenCreated - Allow a contract to specify a function to run when a token is created
-* WalletService:createUserWallet - Service method to create a managed wallet and assign it to a user
-
-### Pending
-
-* WalletService:assignUserWallet - Assign a wallet to a user
-* ContractService:ImportTokens - Upload the metadata for all tokens for a given contract
-* ContractService:updateAttributes - Update contract attributes from blockchain contract
-* ContractService:mintToken - Mint a token from a managed wallet
-* ContractService:getContractInstance - Return an EthersJS contract instance for a given contract id
 
 
