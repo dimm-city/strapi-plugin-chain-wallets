@@ -1,5 +1,6 @@
 {
-  "name": "@dimm-city/plugin-chain-wallets",
+  "$schema": "https://json.schemastore.org/package",
+  "name": "strapi-plugin-chain-wallets",
   "version": "0.0.1",
   "description": "This is the description of the plugin.",
   "strapi": {
@@ -8,7 +9,12 @@
     "kind": "plugin",
     "displayName": "Chain Wallets"
   },
-  "dependencies": {},
+  "dependencies": {
+    "ethers": "^5.7.2"
+  },
+  "peerDependencies": {
+    "@strapi/strapi": "^4.5.0"
+  },
   "author": {
     "name": "founder3"
   },
