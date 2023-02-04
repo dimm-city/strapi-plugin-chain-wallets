@@ -1,10 +1,15 @@
 module.exports = {
   syncContracts: {
     task: ({ strapi }) => {
-      console.log("chain wallets contacts");
+      console.time();
+      const service = strapi.service("plugin::chain-wallets.chain-metadata");
+      service.syncWallets().then((result) => {
+        console.log(JSON.stringify(result));
+      });
+        console.timeEnd();
     },
     options: {
-      rule: "*/10 * * * * *",
+      rule: "* 1 * * * *",
     },
   },
 };

@@ -10,6 +10,7 @@ Here are some of the things Chain Wallets currently does:
 * Associate a tokens with entities
 * Automatically configures an API endpoint to return token metadata
 * Protects metadata of unminted tokens preventing data leaks
+* Allow an initializer function to be specified for each contract
 * Configure hooks for your content-type for:
     * Returning metadata
     * Creating new entity for a token
@@ -18,7 +19,7 @@ Here are some of the things Chain Wallets currently does:
 ### Roadmap
 
 * Provide "Owns Token" policy to only allow token owners to call the controller action
-* Allow an initializer function to be specified for each contract
+* Protect images of unminted tokens
 * Create a "managed wallet" for and associate it with the current user
 * Allow users to associate existing wallets with their login
 * Import metadata for all tokens in a contract
@@ -35,4 +36,25 @@ This section gives examples of how to chain wallets' features.
 * Optionally specify a function name for the metadata extender function
 * Add function to the service that transforms the metadata for the token
 
+### Model Lifecycle
 
+If you would like to leverage token metadata when an entity is being created, you can simply use the built in lifecycle hooks of Strapi. For example, this code sets the eyes field to the metadata value from a token when the entity is created:
+
+```javascript
+module.exports = {
+  async beforeCreate(event) {
+    const { data, where, select, populate } = event.params;
+    
+    //Example of how to do something with the associated token before creating the entity
+    const svc = strapi.service("plugin::chain-wallets.chain-token");
+
+    if (data.token.connect.length > 0) {
+      const token = await svc.findOne(data.token.connect[0]?.id);
+
+      data.eyes = token.metadata.attributes.find(
+        (v) => v.trait_type == "Eyes"
+      ).value;
+    }
+  },
+};
+```
