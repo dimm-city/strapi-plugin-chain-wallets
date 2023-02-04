@@ -4,7 +4,7 @@ A Strapi v4 plugin that allows EVM smart contracts to be easily associated with 
 
 Here are some of the things Chain Wallets currently does:
 
-* Associate content-types to a smart contracts
+* [Associate content-types to a smart contracts](docs/contract-content.md)
 * Automatically sync tokens to Strapi content types
 * Automatically sync token ownership in database
 * Associate a tokens with entities
