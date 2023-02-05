@@ -4,17 +4,18 @@ A Strapi v4 plugin that allows EVM smart contracts to be easily associated with 
 
 Here are some of the things Chain Wallets currently does:
 
-* [Associate content-types to a smart contracts](docs/contract-content.md)
-* Automatically sync tokens to Strapi content types
-* Automatically sync token ownership in database
-* Associate a tokens with entities
-* Automatically configures an API endpoint to return token metadata
-* Protects metadata of unminted tokens preventing data leaks
-* Allow an initializer function to be specified for each contract
-* Configure hooks for your content-type for:
-    * Returning metadata
-    * Creating new entity for a token
-* ...and more to come!
+* [Associate content-types to a smart contracts](docs/contracts-content.md)
+* [Associate a tokens with entities](docs/contracts-content.md)
+* [Automatically sync tokens to Strapi content types](docs/syncing-tokens.md)
+* [Automatically sync token ownership in database](docs/syncing-tokens.md)
+* [Automatically configures an API endpoint to return token metadata](docs/metadata-api.md)
+* [Protects metadata of unminted tokens preventing data leaks](docs/metadata-api.md)
+* [Extend entity service with to integrate with token metadata](docs/hooks.md#service-functions)    
+    * [Allow an initializer function to be specified for each contract](docs/hooks.md#initializeEntity)
+    * [Extend token metadata from entity](docs/hooks.md#extendtokenmetadata)
+* [Configure hooks for your content-type for:](docs/hooks.md#model-lifecycle)    
+    * [Creating new entity from token metadata](docs/hooks.md#beforecreate)
+* [...and more to come!](docs/TODO.md)
 
 ### Roadmap
 
@@ -36,25 +37,3 @@ This section gives examples of how to chain wallets' features.
 * Optionally specify a function name for the metadata extender function
 * Add function to the service that transforms the metadata for the token
 
-### Model Lifecycle
-
-If you would like to leverage token metadata when an entity is being created, you can simply use the built in lifecycle hooks of Strapi. For example, this code sets the eyes field to the metadata value from a token when the entity is created:
-
-```javascript
-module.exports = {
-  async beforeCreate(event) {
-    const { data, where, select, populate } = event.params;
-    
-    //Example of how to do something with the associated token before creating the entity
-    const svc = strapi.service("plugin::chain-wallets.chain-token");
-
-    if (data.token.connect.length > 0) {
-      const token = await svc.findOne(data.token.connect[0]?.id);
-
-      data.eyes = token.metadata.attributes.find(
-        (v) => v.trait_type == "Eyes"
-      ).value;
-    }
-  },
-};
-```
