@@ -5,9 +5,17 @@ module.exports = {
       {
         method: "GET",
         path: "/test",
-        handler: "chain-metadata.updateTokens",
+        handler: "chain-contract.updateTokens",
         config: {
           policies: ["owns-token"],
+        },
+      },
+      {
+        method: "POST",
+        path: "/import-tokens/:contract",
+        handler: "chain-contract.importTokens",
+        config: {
+          policies: [],
         },
       },
       {
@@ -15,9 +23,17 @@ module.exports = {
         path: "/metadata/:contract/:tokenId",
         handler: "chain-metadata.getTokenMetadata",
         config: {
-          policies: [],
+          policies: ["token-exists"],
         },
-      }
+      },
+      {
+        method: "GET",
+        path: "/images/:contract/:tokenId.png",
+        handler: "chain-metadata.getTokenImage",
+        config: {
+          policies: ["token-exists"],
+        },
+      },
     ],
   },
 };

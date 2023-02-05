@@ -26,7 +26,8 @@
     "displayName": "Chain Wallets"
   },
   "dependencies": {
-    "ethers": "^5.7.2"
+    "ethers": "^5.7.2",
+    "unzipper": "^0.10.11"
   },
   "peerDependencies": {
     "@strapi/strapi": "^4.5.0"

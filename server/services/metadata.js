@@ -2,13 +2,14 @@
 
 const { TYPE_TOKEN, NAME_META_EXTENDER } = require("../consts");
 
-
+const path = require("path");
+const fs = require("fs");
 /**
  * metadata service
  */
 
 module.exports = ({ strapi }) => ({
-  async mergeMetadata(tokenId, contract) {
+  async mergeMetadata(contract, tokenId) {
     let result = { attributes: [] };
 
     const service = strapi.service(TYPE_TOKEN);
@@ -52,6 +53,32 @@ module.exports = ({ strapi }) => ({
     }
     return result;
   },
+  async getImage(contract, tokenId) {
+    const service = strapi.service(TYPE_TOKEN);
+    const tokens = await service.find({
+      filters: {
+        tokenId: tokenId,
+        contract: {
+          slug: contract,
+        },
+      },
+      populate: "*",
+    });
 
+    let token = {};
+    if (tokens?.results.length > 0) {
+      token = tokens.results.at(0);
+    }
 
+    const imagePath = path.join(
+      __dirname,
+      `tokens/${token.contract.slug}/images/${token.tokenId}.png`
+    );
+
+    // Check if the file exists
+    if (!fs.existsSync(imagePath)) {
+      return null;
+    }
+    return fs.createReadStream(imagePath);
+  },
 });

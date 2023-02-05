@@ -2,40 +2,34 @@
 
 const { TYPE_METADATA } = require("../consts");
 
-/**
- * A set of functions called "actions" for `metadata`
- */
+async function getTokenImage(ctx) {
+  const { tokenId, contract } = ctx.params;
+
+  try {
+    // Return the image file
+    const service = strapi.service(TYPE_METADATA);
+    const image = await service.getImage(contract, tokenId);
+
+    if (image === null) return ctx.badRequest(null, "Image not found");
+
+    ctx.set("Content-Type", "image/png");
+    ctx.body = image;
+  } catch (error) {
+    console.error("Error getting image", error);
+  }
+}
 async function getTokenMetadata(ctx, next) {
   const { tokenId, contract } = ctx.params;
   const service = strapi.service(TYPE_METADATA);
-  let result = await service.mergeMetadata(tokenId, contract);
-  if(result){
+  let result = await service.mergeMetadata(contract, tokenId);
+  if (result) {
     ctx.body = result;
   } else {
     ctx.response.statusCode = 404;
   }
 }
 
-/**
- * Testing endpoint that should be removed
- * @param {*} ctx the request context
- * @param {*} next next function in request pipeline
- */
-async function updateTokens(ctx, next) {
-  try {
-    console.time("updateTokens");
-    const service = strapi.service(TYPE_METADATA);
-    var result = await service.syncWallets();
-    console.timeEnd("updateTokens");
-    ctx.body = "Testing: " + JSON.stringify(result);
-  } catch (err) {
-    ctx.body = err;
-    ctx.response.status = 500;
-    console.log(err);
-  }
-}
-
 module.exports = {
-  updateTokens,
   getTokenMetadata,
+  getTokenImage,
 };
