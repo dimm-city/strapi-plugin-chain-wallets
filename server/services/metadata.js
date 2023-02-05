@@ -2,6 +2,8 @@
 
 const { TYPE_TOKEN, NAME_META_EXTENDER } = require("../consts");
 
+const path = require("path");
+const fs = require("fs");
 /**
  * metadata service
  */

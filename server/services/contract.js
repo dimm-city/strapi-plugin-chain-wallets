@@ -9,6 +9,7 @@ const {
   TYPE_TOKEN,
   TYPE_CONTRACT,
 } = require("../consts");
+const unzipper = require("unzipper");
 
 let isSyncing = false;
 
@@ -44,28 +45,56 @@ async function updateContractDetails(
 
 async function importTokens(contractId, zipFile) {
   const tokenSvc = strapi.service(TYPE_TOKEN);
-  const contract = await this.findOne(contractId);
+  const contracts = await this.find({
+    filters: {
+      slug: contractId,
+    },
+  });
+
+  const contract = contracts?.results?.at(0);
   const tempFolderName = "temp-" + Date.now();
-  // Extract the contents of the zip file to a temporary directory
-  const unzippedFiles = await zipFile.extractAllTo(
-    path.join(__dirname, tempFolderName)
-  );
+
+  fs.mkdirSync(path.dirname(path.join(__dirname, tempFolderName)), {
+    recursive: true,
+  });
+
+  const unzippedFiles = await unzipper.Open.file(zipFile.path);
 
   // Parse and process each file in the zip archive
-  for (const file of unzippedFiles) {
+  for (const file of unzippedFiles.files) {
     if (file.type === "File" && path.extname(file.path) === ".json") {
       // Parse the contents of the JSON file
       const jsonContent = JSON.parse(await file.buffer());
+      const tokenId = path.basename(file.path, path.extname(file.path));
 
-      await tokenSvc.create({
-        contract,
-        metadata: jsonContent,
-        tokenId: file.name
+      const tokens = await tokenSvc.find({
+        filters: {
+          tokenId,
+          contract: {
+            slug: contract.slug,
+          },
+        },
       });
 
+      if (tokens?.results?.length === 0) {
+        await tokenSvc.create({
+          data: {
+            contract,
+            tokenId,
+            metadata: jsonContent,
+            publishedAt: null
+          },
+        });
+      } else {
+        await tokenSvc.update(tokens.results.at(0).id, {
+          data: {
+            metadata: jsonContent,
+          },
+        });
+      }
     } else if (
       file.type === "File" &&
-      path.extname(file.path).match(/\.(jpeg|jpg|png)$/)
+      path.extname(file.path).match(/\.(jpeg|jpg|png|mp4)$/)
     ) {
       // Save the image file to the server
       const imagePath = path.join(

@@ -2,7 +2,7 @@
 
 const { TYPE_METADATA } = require("../consts");
 
-async function getImage(ctx) {
+async function getTokenImage(ctx) {
   const { tokenId, contract } = ctx.params;
 
   try {
@@ -31,5 +31,5 @@ async function getTokenMetadata(ctx, next) {
 
 module.exports = {
   getTokenMetadata,
-  getImage,
+  getTokenImage,
 };

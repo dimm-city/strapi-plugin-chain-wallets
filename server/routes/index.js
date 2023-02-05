@@ -11,7 +11,7 @@ module.exports = {
         },
       },
       {
-        method: "GET",
+        method: "POST",
         path: "/import-tokens/:contract",
         handler: "chain-contract.importTokens",
         config: {
@@ -29,7 +29,7 @@ module.exports = {
       {
         method: "GET",
         path: "/images/:contract/:tokenId.png",
-        handler: "chain-metadata.getTokenMetadata",
+        handler: "chain-metadata.getTokenImage",
         config: {
           policies: ["token-exists"],
         },
