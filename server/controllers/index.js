@@ -1,11 +1,12 @@
-'use strict';
+"use strict";
 
-const metadata = require('./metadata');
-const { createCoreController } = require('@strapi/strapi').factories;
+const { TYPE_TOKEN, TYPE_CONTRACT, TYPE_WALLET } = require("../consts");
+const metadata = require("./metadata");
+const { createCoreController } = require("@strapi/strapi").factories;
 
 module.exports = {
   "chain-metadata": metadata,
-  "chain-token": createCoreController('plugin::chain-wallets.chain-token'),
-  "chain-contract": createCoreController('plugin::chain-wallets.chain-contract'),
-  "chain-wallet": createCoreController('plugin::chain-wallets.chain-wallet'),
+  "chain-token": createCoreController(TYPE_TOKEN),
+  "chain-contract": createCoreController(TYPE_CONTRACT),
+  "chain-wallet": createCoreController(TYPE_WALLET),
 };

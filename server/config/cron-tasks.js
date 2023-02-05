@@ -1,15 +1,17 @@
+const { TYPE_CONTRACT } = require("../consts");
+
 module.exports = {
   syncContracts: {
     task: ({ strapi }) => {
-      console.time();
-      const service = strapi.service("plugin::chain-wallets.chain-metadata");
-      service.syncWallets().then((result) => {
-        console.log(JSON.stringify(result));
+      const label = `Sync contracts: ${Date.now()}`;
+      console.time(label);
+      const service = strapi.service(TYPE_CONTRACT);
+      service.syncContracts().then((result) => {
+        console.timeEnd(label);
       });
-        console.timeEnd();
     },
     options: {
-      rule: "* 1 * * * *",
+      rule: "*/30 * * * * *",
     },
   },
 };

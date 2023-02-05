@@ -1,29 +1,18 @@
 const { createCoreService } = require("@strapi/strapi").factories;
+const ethers = require("ethers");
+const { TYPE_WALLET } = require("../consts");
+
 
 module.exports = createCoreService(
-  "plugin::chain-wallets.chain-wallet",
+  TYPE_WALLET,
   () => ({
-    async createUserWallet(user) {
+    async attachUserWallet(wallet, user) {
+      console.warn("Not Implemented");
+    },
+    async createUserWallet(networkId, user) {
       const wallet = ethers.Wallet.createRandom();
 
-      // const existingUsers = await strapi.entityService.findMany(
-      //   "api::users-permissions.user",
-      //   {
-      //     filters: {
-      //       username: model.username,
-      //     },
-      //   }
-      // );
-      //console.log("existing user", result);
-      console.log(
-        "created new user",
-        user,
-        wallet.mnemonic.phrase,
-        wallet.privateKey
-      );
-
-      const walletEntity = await strapi.entityService.create(
-        "plugin::chain-wallets.chain-wallet",
+      const walletEntity = await super.create(
         {
           data: {
             managed: true,
@@ -33,7 +22,7 @@ module.exports = createCoreService(
             encKey: wallet.privateKey,
             user: user,
             blockchain: {
-              id: 2,
+              id: networkId,
             },
           },
         }

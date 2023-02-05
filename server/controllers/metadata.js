@@ -1,11 +1,13 @@
 "use strict";
 
+const { TYPE_METADATA } = require("../consts");
+
 /**
  * A set of functions called "actions" for `metadata`
  */
 async function getTokenMetadata(ctx, next) {
   const { tokenId, contract } = ctx.params;
-  const service = strapi.service("plugin::chain-wallets.chain-metadata");
+  const service = strapi.service(TYPE_METADATA);
   let result = await service.mergeMetadata(tokenId, contract);
   if(result){
     ctx.body = result;
@@ -14,11 +16,15 @@ async function getTokenMetadata(ctx, next) {
   }
 }
 
-
+/**
+ * Testing endpoint that should be removed
+ * @param {*} ctx the request context
+ * @param {*} next next function in request pipeline
+ */
 async function updateTokens(ctx, next) {
   try {
     console.time("updateTokens");
-    const service = strapi.service("plugin::chain-wallets.chain-metadata");
+    const service = strapi.service(TYPE_METADATA);
     var result = await service.syncWallets();
     console.timeEnd("updateTokens");
     ctx.body = "Testing: " + JSON.stringify(result);
@@ -30,6 +36,6 @@ async function updateTokens(ctx, next) {
 }
 
 module.exports = {
-  index: updateTokens,
-  getTokenMetadata: getTokenMetadata,
+  updateTokens,
+  getTokenMetadata,
 };

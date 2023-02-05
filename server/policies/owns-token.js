@@ -1,5 +1,7 @@
 "use strict";
 
+const { TYPE_TOKEN, TYPE_WALLET } = require("../consts");
+
 /**
  * WIP: `owns-token` policy
  */
@@ -10,7 +12,7 @@ module.exports = async (ctx, config, { strapi }) => {
   //Question: how to get tokenId and contract from an entity specific route?
   const { tokenId, contract } = ctx.params;
   const { user } = ctx.state;
-  const tokenSvc = strapi.service("plugin::chain-wallets.chain-token");
+  const tokenSvc = strapi.service(TYPE_TOKEN);
 
   const tokens = await tokenSvc.find({
     filters: {
@@ -34,7 +36,7 @@ module.exports = async (ctx, config, { strapi }) => {
     return false;
   }
 
-  const walletSvc = strapi.service("plugin::chain-wallets.chain-wallet");
+  const walletSvc = strapi.service(TYPE_WALLET);
   const wallets = walletSvc.find({
     filters: {
       user: {
