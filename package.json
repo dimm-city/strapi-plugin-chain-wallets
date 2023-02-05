@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package",
   "name": "strapi-plugin-chain-wallets",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Chain Wallets is a plugin for Strapi v4 that allows EVM smart contracts to be easily associated with a content-type.",
   "keywords": [
     "metadata",
