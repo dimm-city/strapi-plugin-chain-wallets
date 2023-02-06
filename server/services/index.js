@@ -1,15 +1,14 @@
 "use strict";
 
-const metadata = require("./metadata");
+const chainToken = require("./token");
 const chainWallet = require('./wallet');
 const chainContract = require('./contract');
-const { TYPE_NETWORK, TYPE_TOKEN } = require("../consts");
+const { TYPE_NETWORK } = require("../consts");
 const { createCoreService } = require("@strapi/strapi").factories;
 
 module.exports = {
-  "chain-metadata": metadata,
   "chain-network": createCoreService(TYPE_NETWORK),
   "chain-wallet": chainWallet,
-  "chain-token": createCoreService(TYPE_TOKEN),
+  "chain-token": chainToken,
   "chain-contract": chainContract,
 };

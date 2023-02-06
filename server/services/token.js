@@ -1,5 +1,5 @@
 "use strict";
-
+const { createCoreService } = require("@strapi/strapi").factories;
 const { TYPE_TOKEN, NAME_META_EXTENDER } = require("../consts");
 
 const path = require("path");
@@ -8,12 +8,11 @@ const fs = require("fs");
  * metadata service
  */
 
-module.exports = ({ strapi }) => ({
-  async mergeMetadata(contract, tokenId) {
+module.exports = createCoreService(TYPE_TOKEN, ({ strapi }) => ({
+  async getMetadata(contract, tokenId) {
     let result = { attributes: [] };
 
-    const service = strapi.service(TYPE_TOKEN);
-    const tokens = await service.find({
+    const tokens = await super.find({
       filters: {
         tokenId: tokenId,
         contract: {
@@ -53,9 +52,8 @@ module.exports = ({ strapi }) => ({
     }
     return result;
   },
-  async getImage(contract, tokenId) {
-    const service = strapi.service(TYPE_TOKEN);
-    const tokens = await service.find({
+  async getImage(contract, tokenId) {    
+    const tokens = await super.find({
       filters: {
         tokenId: tokenId,
         contract: {
@@ -70,9 +68,10 @@ module.exports = ({ strapi }) => ({
       token = tokens.results.at(0);
     }
 
+    //ToDo allow for different image loader/strategy
     const imagePath = path.join(
-      __dirname,
-      `tokens/${token.contract.slug}/images/${token.tokenId}.png`
+      path.resolve("."),
+      `.tokens/${token.contract.slug}/${token.tokenId}.png`
     );
 
     // Check if the file exists
@@ -81,4 +80,4 @@ module.exports = ({ strapi }) => ({
     }
     return fs.createReadStream(imagePath);
   },
-});
+}));

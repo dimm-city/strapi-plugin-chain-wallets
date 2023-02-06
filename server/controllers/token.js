@@ -1,13 +1,13 @@
 "use strict";
 
-const { TYPE_METADATA } = require("../consts");
+const {  TYPE_TOKEN } = require("../consts");
 
 async function getTokenImage(ctx) {
   const { tokenId, contract } = ctx.params;
 
   try {
     // Return the image file
-    const service = strapi.service(TYPE_METADATA);
+    const service = strapi.service(TYPE_TOKEN);
     const image = await service.getImage(contract, tokenId);
 
     if (image === null) return ctx.badRequest(null, "Image not found");
@@ -20,8 +20,8 @@ async function getTokenImage(ctx) {
 }
 async function getTokenMetadata(ctx, next) {
   const { tokenId, contract } = ctx.params;
-  const service = strapi.service(TYPE_METADATA);
-  let result = await service.mergeMetadata(contract, tokenId);
+  const service = strapi.service(TYPE_TOKEN);
+  let result = await service.getMetadata(contract, tokenId);
   if (result) {
     ctx.body = result;
   } else {

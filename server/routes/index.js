@@ -21,7 +21,7 @@ module.exports = {
       {
         method: "GET",
         path: "/metadata/:contract/:tokenId",
-        handler: "chain-metadata.getTokenMetadata",
+        handler: "chain-token.getTokenMetadata",
         config: {
           policies: ["token-exists"],
         },
@@ -29,7 +29,7 @@ module.exports = {
       {
         method: "GET",
         path: "/images/:contract/:tokenId.png",
-        handler: "chain-metadata.getTokenImage",
+        handler: "chain-token.getTokenImage",
         config: {
           policies: ["token-exists"],
         },

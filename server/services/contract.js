@@ -14,6 +14,7 @@ const unzipper = require("unzipper");
 let isSyncing = false;
 
 async function createContractInstance(contract) {
+  //ToDo switch to JsonRpcProvider (AVAX) https://docs.infura.io/infura/networks/avalanche-c-chain/how-to/choose-a-network
   const provider = new ethers.providers.InfuraProvider(
     contract?.network?.name ?? "homestead",
     process.env.provider_project_id
@@ -54,7 +55,9 @@ async function importTokens(contractId, zipFile) {
   const contract = contracts?.results?.at(0);
   const tempFolderName = "temp-" + Date.now();
 
-  fs.mkdirSync(path.dirname(path.join(__dirname, tempFolderName)), {
+  const rootDir = path.resolve(".");
+  const tempFolderPath = path.join(rootDir, tempFolderName);
+  fs.mkdirSync(tempFolderPath, {
     recursive: true,
   });
 
@@ -82,7 +85,7 @@ async function importTokens(contractId, zipFile) {
             contract,
             tokenId,
             metadata: jsonContent,
-            publishedAt: null
+            publishedAt: null,
           },
         });
       } else {
@@ -98,8 +101,8 @@ async function importTokens(contractId, zipFile) {
     ) {
       // Save the image file to the server
       const imagePath = path.join(
-        __dirname,
-        `tokens/${contract.slug}/images/${file.path}`
+        rootDir,
+        `.tokens/${contract.slug}/${file.path}`
       );
       fs.mkdirSync(path.dirname(imagePath), { recursive: true });
       fs.writeFileSync(imagePath, await file.buffer());
@@ -107,7 +110,7 @@ async function importTokens(contractId, zipFile) {
   }
 
   // Remove the temporary files
-  fs.rmdirSync(path.join(__dirname, tempFolderName), { recursive: true });
+  fs.rmSync(tempFolderPath, { recursive: true });
 }
 
 module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
