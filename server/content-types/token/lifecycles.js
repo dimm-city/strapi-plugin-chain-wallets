@@ -8,8 +8,13 @@ module.exports = {
 
     if (data?.contract?.id || data?.contract?.connect?.length > 0) {
       const svc = strapi.service(TYPE_CONTRACT);
-      const contract = await svc.findOne(data?.contract?.id ?? data.contract.connect[0]?.id);
-      if (contract.entityType) {
+      const contract = await svc.findOne(
+        data?.contract?.id ?? data.contract.connect[0]?.id
+      );
+      if (contract?.slug) {
+        data.slug = `${contract.slug}-${data.tokenId}`;
+      }
+      if (contract?.entityType) {
         const entitySvc = strapi.services[contract.entityType];
 
         if (entitySvc) {

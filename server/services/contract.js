@@ -83,7 +83,7 @@ async function importTokens(contractId, zipFile) {
         await tokenSvc.create({
           data: {
             contract,
-            tokenId,
+            tokenId: `${contract.slug}-${tokenId}`,
             metadata: jsonContent,
             publishedAt: null,
           },
@@ -167,14 +167,17 @@ module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
               // Get the token ID transferred
               const tokenId = event.args.tokenId.toString();
               let tokens = await tokenSvc.find({
-                filters: { tokenId },
+                filters: {
+                  tokenId: `${contract.slug}-${tokenId}`,
+                },
                 populate: "*",
+                publicationState: "preview",
               });
               let token = tokens.results.at(0);
               if (!token) {
                 token = await tokenSvc.create({
                   data: {
-                    tokenId,
+                    tokenId: `${contract.slug}-${tokenId}`,
                     contract,
                   },
                 });
@@ -205,10 +208,13 @@ module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
                 });
               } else receiverWallet = receiverWallets.results.at(0);
 
-              if (token.wallet.id != receiverWallet.id) {
+              if (token.wallet?.id != receiverWallet.id) {
                 // Update the token ownership in the DB
                 await tokenSvc.update(token.id, {
-                  data: { wallet: receiverWallet },
+                  data: {
+                    wallet: receiverWallet,
+                    publishedAt: token.publishedAt ?? new Date().toISOString(),
+                  },
                 });
               }
             }
