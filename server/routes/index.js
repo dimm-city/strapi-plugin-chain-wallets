@@ -12,6 +12,22 @@ module.exports = {
       },
       {
         method: "POST",
+        path: "/wallets/attach/:network",
+        handler: "chain-wallet.attachUserWallet",
+        config: {
+          policies: [],
+        },
+      },
+      {
+        method: "GET",
+        path: "/wallets/verficiation-message",
+        handler: "chain-wallet.getVerificationMessage",
+        config: {
+          policies: [],
+        },
+      },
+      {
+        method: "POST",
         path: "/import-tokens/:contract",
         handler: "chain-contract.importTokens",
         config: {
