@@ -5,9 +5,9 @@ module.exports = {
       {
         method: "GET",
         path: "/test",
-        handler: "chain-contract.updateTokens",
+        handler: "chain-wallet.getUserWallets",
         config: {
-          policies: ["owns-token"],
+          policies: [],
         },
       },
       {
@@ -20,7 +20,15 @@ module.exports = {
       },
       {
         method: "GET",
-        path: "/wallets/verficiation-message",
+        path: "/wallets",
+        handler: "chain-wallet.getUserWallets",
+        config: {
+          policies: [],
+        },
+      },
+      {
+        method: "GET",
+        path: "/wallets/verification-message",
         handler: "chain-wallet.getVerificationMessage",
         config: {
           policies: [],

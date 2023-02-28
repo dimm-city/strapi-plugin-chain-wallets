@@ -33,6 +33,10 @@
       "type": "string",
       "required": true
     },
+    "name": {
+      "type": "string",
+      "required": false
+    },
     "seed": {
       "type": "text",
       "private": true,
@@ -60,7 +64,8 @@
     "user": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "plugin::users-permissions.user"      
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "wallets"
     }
   }
 }
