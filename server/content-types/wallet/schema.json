@@ -47,6 +47,11 @@
       "private": true,
       "default": true
     },
+    "primary": {
+      "type": "boolean",
+      "private": true,
+      "default": true
+    },
     "key": {
       "type": "string",
       "private": true,
