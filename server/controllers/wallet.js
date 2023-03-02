@@ -8,15 +8,40 @@ async function attachUserWallet(ctx) {
       );
     const { network } = ctx.params;
 
-    const signature = ctx.header.authorization;
+    const signature = ctx.header.sig;
     const service = strapi.service(TYPE_WALLET);
-    const message = service.getVerificationMessage();
-    let address = service.getSigner(message, signature);
+    const message = "Attach this wallet"; // service.getVerificationMessage();    
+    const address = service.getSigner(message, signature);
+    const wallet = await service.getOrCreateWallet(network, address);
     let result = {
       error: "Failed to attach wallet.",
     };
     if (address)
-      result = await service.attachUserWallet(network, address, ctx.state.user);
+      result = await service.attachUserWallet(wallet, ctx.state.user);
+
+    ctx.body = result;
+  } catch (error) {
+    ctx.body = error;
+    ctx.response.status = 500;
+    strapi.log.error(error);
+  }
+}
+
+async function detachUserWallet(ctx) {
+  try {
+    if (ctx.state.user?.id == null)
+      throw new Error(
+        "You must be logged in to detach a wallet to your account."
+      );
+    const { address, network } = ctx.params;
+
+    const service = strapi.service(TYPE_WALLET);
+    const wallet = await service.getOrCreateWallet(network, address);
+    let result = {
+      error: "Failed to detach wallet.",
+    };
+    if (wallet?.user?.id === ctx.state.user.id)
+      result = await service.detachUserWallet(wallet, ctx.state.user);
 
     ctx.body = result;
   } catch (error) {
@@ -49,6 +74,7 @@ async function getUserWallets(ctx) {
 
 module.exports = {
   attachUserWallet,
+  detachUserWallet,
   getVerificationMessage,
   getUserWallets,
 };

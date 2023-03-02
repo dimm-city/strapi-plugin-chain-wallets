@@ -1,12 +1,15 @@
 const { createCoreService } = require("@strapi/strapi").factories;
 const ethers = require("ethers");
-const { TYPE_WALLET } = require("../consts");
+const { TYPE_WALLET, TYPE_NETWORK } = require("../consts");
 
-module.exports = createCoreService(TYPE_WALLET, () => ({
-  async attachUserWallet(networkId, address, user) {
-    const wallet = await getOrCreateWallet(networkId, address);
-    user.wallet = wallet;
-    await super.update(user.id, { data: user });
+module.exports = createCoreService(TYPE_WALLET, (ctx) => ({
+  async attachUserWallet(wallet, user) {
+    wallet.user = user;
+    await super.update(wallet.id, { data: wallet });
+  },
+  async detachUserWallet(wallet) {    
+    wallet.user = null;
+    await super.update(wallet.id, { data: wallet });
   },
   async createManagedUserWallet(networkId, user) {
     const wallet = ethers.Wallet.createRandom();
@@ -27,19 +30,24 @@ module.exports = createCoreService(TYPE_WALLET, () => ({
     return walletEntity;
   },
   async getOrCreateWallet(networkId, address) {
-    const { results } = super.find({
+    const { results } = await super.find({
       filters: {
         address,
         network: {
           chainId: networkId,
         },
       },
+      populate:{
+        network: true,
+        user: true
+      }
     });
     if (results?.length === 1) {
       return results.at(0);
     }
 
-    const networks = await super.find({
+    const networkSvc = ctx.strapi.services[TYPE_NETWORK];
+    const networks = await networkSvc.find({
       filters: {
         chainId: networkId,
       },
@@ -72,9 +80,10 @@ module.exports = createCoreService(TYPE_WALLET, () => ({
       },
       fields: ["id", "address", "name", "managed"],
       populate: {
+        network: true,
         tokens: {
           fields: ["id", "tokenId", "metadata"],
-          populate: {           
+          populate: {
             contract: {
               fields: ["id", "name", "slug", "entityType", "address"],
             },

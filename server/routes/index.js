@@ -19,6 +19,14 @@ module.exports = {
         },
       },
       {
+        method: "POST",
+        path: "/wallets/detach/:network/:address",
+        handler: "chain-wallet.detachUserWallet",
+        config: {
+          policies: [],
+        },
+      },
+      {
         method: "GET",
         path: "/wallets",
         handler: "chain-wallet.getUserWallets",
