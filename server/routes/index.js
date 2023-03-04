@@ -1,11 +1,65 @@
+const { TYPE_TOKEN } = require('../consts');
+const { createCoreRouter } = require('@strapi/strapi').factories;
+
+const tokenRouter = createCoreRouter(TYPE_TOKEN, {
+  only: ['find'],
+  config: {
+    find: {
+      auth: false,
+      policies: [],
+      middlewares: [],
+    }
+  }
+});
+
 module.exports = {
   "content-api": {
     type: "content-api",
     routes: [
       {
         method: "GET",
-        path: "/test",
-        handler: "chain-wallet.getUserWallets",
+        path: "/test/:id",
+        handler: "chain-token.findOne",
+        config: {
+          policies: ["owns-token"],
+        },
+      },
+      {
+        method: "GET",
+        path: "/tokens",
+        handler: "chain-token.find",
+        config: {
+          policies: [],
+        },
+      },
+      {
+        method: "GET",
+        path: "/tokens/:id",
+        handler: "chain-token.findOne",
+        config: {
+          policies: [],
+        },
+      },
+      {
+        method: "GET",
+        path: "/tokens/:id/owns",
+        handler: "chain-token.ownsToken",
+        config: {
+          policies: [],
+        },
+      },
+      {
+        method: "GET",
+        path: "/contracts",
+        handler: "chain-contract.find",
+        config: {
+          policies: [],
+        },
+      },
+      {
+        method: "GET",
+        path: "/contracts/:id",
+        handler: "chain-contract.findOne",
         config: {
           policies: [],
         },

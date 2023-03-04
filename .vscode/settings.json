@@ -12,7 +12,11 @@
         "**/build": true
     },
     "cSpell.words": [
+        "consts",
+        "dimm",
+        "ipfs",
         "Sporos",
-        "strapi"
+        "strapi",
+        "unzipper"
     ]
 }

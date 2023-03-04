@@ -11,7 +11,7 @@ async function importTokens(ctx) {
     ctx.body = result;
   } catch (error) {
     ctx.body = error;
-    ctx.response.status = 500;    
+    ctx.response.status = 500;
     strapi.log.error(error);
   }
 }
@@ -35,7 +35,14 @@ async function updateTokens(ctx, next) {
   }
 }
 
-module.exports = {
+// module.exports = {
+//   importTokens,
+//   updateTokens,
+// };
+
+const { createCoreController } = require("@strapi/strapi").factories;
+
+module.exports = createCoreController(TYPE_CONTRACT, ({ strapi }) => ({
   importTokens,
   updateTokens,
-};
+}));

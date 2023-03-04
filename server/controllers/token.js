@@ -1,6 +1,6 @@
 "use strict";
 
-const {  TYPE_TOKEN } = require("../consts");
+const { TYPE_TOKEN } = require("../consts");
 
 async function getTokenImage(ctx) {
   const { tokenId, contract } = ctx.params;
@@ -28,8 +28,27 @@ async function getTokenMetadata(ctx, next) {
     ctx.response.statusCode = 404;
   }
 }
+async function ownsToken(ctx, next) {
+  if (ctx.state.user?.id == null) return false;
 
-module.exports = {
+  const service = strapi.service(TYPE_TOKEN);
+  const token = await service.findOne(ctx.params.id, {
+    populate: { user: true },
+  });
+  let result = token.user?.id === ctx.state.user?.id;
+
+  ctx.body = result;
+}
+
+// module.exports = {
+//   getTokenMetadata,
+//   getTokenImage
+// };
+
+const { createCoreController } = require("@strapi/strapi").factories;
+
+module.exports = createCoreController(TYPE_TOKEN, ({ strapi }) => ({
   getTokenMetadata,
   getTokenImage,
-};
+  ownsToken
+}));
