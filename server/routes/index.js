@@ -119,6 +119,16 @@ module.exports = {
         config: {
           policies: ["token-exists"],
         },
+        
+      },
+      {
+        method: "GET",
+        path: "/thumbnails/:contract/:tokenId.png",
+        handler: "chain-token.getTokenImage",
+        config: {
+          policies: ["token-exists"],
+        },
+        
       },
     ],
   },
