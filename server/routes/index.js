@@ -1,17 +1,3 @@
-const { TYPE_TOKEN } = require('../consts');
-const { createCoreRouter } = require('@strapi/strapi').factories;
-
-const tokenRouter = createCoreRouter(TYPE_TOKEN, {
-  only: ['find'],
-  config: {
-    find: {
-      auth: false,
-      policies: [],
-      middlewares: [],
-    }
-  }
-});
-
 module.exports = {
   "content-api": {
     type: "content-api",

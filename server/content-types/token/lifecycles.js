@@ -12,7 +12,7 @@ module.exports = {
         data?.contract?.id ?? data.contract.connect[0]?.id
       );
       if (contract?.slug && !data.tokenId?.startsWith(contract.slug)) {
-        data.tokenId = `${contract.slug}-${data.tokenId}`;
+        data.slug = `${contract.slug}-${data.tokenId}`;
       }
     }
   },
@@ -37,7 +37,7 @@ module.exports = {
           } else {
             const entity = await entitySvc.find({
               filters: {
-                tokenId: result.tokenId,
+                tokenId: result.slug,
               },
             });
 
@@ -46,7 +46,7 @@ module.exports = {
               await strapi.entityService.create(contract.entityType, {
                 data: {
                   name: result.metadata?.name,
-                  tokenId: result.tokenId,
+                  tokenId: result.slug,
                   token: result,
                 },
               });
