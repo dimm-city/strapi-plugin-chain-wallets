@@ -82,15 +82,16 @@ module.exports = createCoreService(TYPE_TOKEN, ({ strapi }) => ({
     fs.stat(imagePath, function (err, stat) {
       if (err == null) {
         console.log("File exists");
-        return fs.createReadStream(imagePath);
       } else if (err.code === "ENOENT") {
         // file does not exist
-        console.log("file does not exist");
+        console.log("file does not exist", imagePath);
+       
       } else {
         console.log("Some other error: ", err.code);
       }
     });
 
-    return null;
+    if (fs.existsSync(imagePath)) return fs.createReadStream(imagePath);
+    else return null;
   },
 }));
