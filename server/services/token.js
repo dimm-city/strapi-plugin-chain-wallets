@@ -5,8 +5,6 @@ const { TYPE_TOKEN, NAME_META_EXTENDER } = require("../consts");
 const path = require("path");
 const fs = require("fs");
 
-
-
 /**
  * metadata service
  */
@@ -56,7 +54,7 @@ module.exports = createCoreService(TYPE_TOKEN, ({ strapi }) => ({
     }
     return result;
   },
-  async getImage(contract, tokenId) {    
+  async getImage(contract, tokenId) {
     const tokens = await super.find({
       filters: {
         tokenId: tokenId,
@@ -72,7 +70,8 @@ module.exports = createCoreService(TYPE_TOKEN, ({ strapi }) => ({
       token = tokens.results.at(0);
     }
 
-    const imagePathBase = strapi.plugin('chain-wallets').config('imagePath') ?? ".tokens";
+    const imagePathBase =
+      strapi.plugin("chain-wallets").config("imagePath") ?? ".tokens";
 
     //ToDo allow for different image loader/strategy
     const imagePath = path.join(
@@ -80,10 +79,18 @@ module.exports = createCoreService(TYPE_TOKEN, ({ strapi }) => ({
       `${imagePathBase}/${token.contract.slug}/${token.tokenId}.png`
     );
 
-    // Check if the file exists
-    if (!fs.existsSync(imagePath)) {
-      return null;
-    }
-    return fs.createReadStream(imagePath);
+    fs.stat(imagePath, function (err, stat) {
+      if (err == null) {
+        console.log("File exists");
+        return fs.createReadStream(imagePath);
+      } else if (err.code === "ENOENT") {
+        // file does not exist
+        console.log("file does not exist");
+      } else {
+        console.log("Some other error: ", err.code);
+      }
+    });
+
+    return null;
   },
 }));
