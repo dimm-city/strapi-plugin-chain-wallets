@@ -258,7 +258,7 @@ module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
       }
 
       isSyncing = false;
-      return `${networks.results.length} networks synced, ${eventCount} events`;
+      return `${contracts.length} synced, ${eventCount} total events`;
     } else {
       return "Sync already in progress";
     }
