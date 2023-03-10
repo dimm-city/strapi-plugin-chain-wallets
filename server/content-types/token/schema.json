@@ -19,10 +19,12 @@
   "pluginOptions": {},
   "attributes": {
     "tokenId": {
-      "type": "uid"
+      "type": "string",
+      "required": true
     },
     "slug": {
-      "type": "uid"
+      "type": "uid",
+      "required": true
     },
     "metadata": {
       "type": "json"

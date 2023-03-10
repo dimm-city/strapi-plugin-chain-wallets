@@ -72,10 +72,7 @@ async function importTokens(contractId, zipFile) {
 
       const tokens = await tokenSvc.find({
         filters: {
-          tokenId,
-          contract: {
-            slug: contract.slug,
-          },
+          slug: `${contract.slug}-${tokenId}`
         },
       });
 
@@ -83,7 +80,8 @@ async function importTokens(contractId, zipFile) {
         await tokenSvc.create({
           data: {
             contract,
-            tokenId: `${contract.slug}-${tokenId}`,
+            tokenId: tokenId,
+            slug: `${contract.slug}-${tokenId}`,
             metadata: jsonContent,
             publishedAt: null,
           },
@@ -168,7 +166,7 @@ module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
               const tokenId = event.args.tokenId.toString();
               let tokens = await tokenSvc.find({
                 filters: {
-                  tokenId: `${contract.slug}-${tokenId}`,
+                  slug: `${contract.slug}-${tokenId}`,
                 },
                 populate: "*",
                 publicationState: "preview",
@@ -177,7 +175,8 @@ module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
               if (!token) {
                 token = await tokenSvc.create({
                   data: {
-                    tokenId: `${contract.slug}-${tokenId}`,
+                    tokenId: `${tokenId}`,
+                    slug: `${contract.slug}-${tokenId}`,
                     contract,
                   },
                 });

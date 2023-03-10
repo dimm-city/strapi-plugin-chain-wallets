@@ -11,7 +11,7 @@ module.exports = {
       const contract = await svc.findOne(
         data?.contract?.id ?? data.contract.connect[0]?.id
       );
-      if (contract?.slug && !data.tokenId?.startsWith(contract.slug)) {
+      if (contract?.slug && !data.slug?.startsWith(contract.slug)) {
         data.slug = `${contract.slug}-${data.tokenId}`;
       }
     }
