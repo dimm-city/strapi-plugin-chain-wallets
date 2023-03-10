@@ -121,9 +121,9 @@ async function getTokenEntity(contract, tokenId) {
   if (entitySvc) {
     const x = await entitySvc.find({
       filters: {
-        tokenId: `${contract.slug}-${tokenId}`,       
+        tokenId: `${contract.slug}-${tokenId}`,
       },
-      publicationState: 'preview'
+      publicationState: "preview",
     });
 
     if (x.results?.length > 0) return x.results.at(0);
@@ -144,123 +144,119 @@ module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
     if (!isSyncing) {
       isSyncing = true;
 
-      const networkSvc = strapi.service(TYPE_NETWORK);
+      const contractSvc = strapi.service(TYPE_CONTRACT);
       const walletSvc = strapi.service(TYPE_WALLET);
       const tokenSvc = strapi.service(TYPE_TOKEN);
 
       //ToDo: refactor to query only contracts that are enabled
-      const networks = await networkSvc.find({
+      const contractResults = await contractSvc.find({
         filters: {
-          publishedAt: {
-            $notNull: true,
-          },
+          enableSync: true,
         },
         populate: {
-          contracts: {
-            populate: ["network"],
-          },
+          network: true,
         },
+        publicationState: "live",
       });
+      const contracts = contractResults.results;
 
       let eventCount = 0;
-      for (let index = 0; index < networks.results.length; index++) {
-        const network = networks.results[index];
+      strapi.log.info(`Found ${contracts.length} contracts to sync`);
+      for (const contract of contracts) {
+        const smartContract = await this.getSmartContract(contract);
+        const currentBlock = await smartContract.provider.getBlockNumber();
+        const entitySvc = getEntityService(contract);
+        // Get the current transaction count for the contract
+        const events = await smartContract.queryFilter(
+          "Transfer",
+          contract.lastSynced ?? 0
+        );
 
-        for (const contract of network.contracts.filter(c => c.enableSync === true)) {
-          const smartContract = await this.getSmartContract(contract);
-          const currentBlock = await smartContract.provider.getBlockNumber();
-          const entitySvc = getEntityService(contract);
-          // Get the current transaction count for the contract
-          const events = await smartContract.queryFilter(
-            "Transfer",
-            contract.lastSynced ?? 0
-          );
+        // Check for new events
+        for (const event of events) {
+          if (event.event == "Transfer" && event.args) {
+            // Get the address of the sender and receiver
+            const from = event.args.from;
+            const to = event.args.to;
 
-          // Check for new events
-          for (const event of events) {
-            if (event.event == "Transfer" && event.args) {
-              // Get the address of the sender and receiver
-              const from = event.args.from;
-              const to = event.args.to;
-
-              // Get the token ID transferred
-              const tokenId = event.args.tokenId.toString();
-              let tokens = await tokenSvc.find({
-                filters: {
+            // Get the token ID transferred
+            const tokenId = event.args.tokenId.toString();
+            let tokens = await tokenSvc.find({
+              filters: {
+                slug: `${contract.slug}-${tokenId}`,
+              },
+              populate: "*",
+              publicationState: "preview",
+            });
+            let token = tokens.results.at(0);
+            if (!token) {
+              token = await tokenSvc.create({
+                data: {
+                  tokenId: `${tokenId}`,
                   slug: `${contract.slug}-${tokenId}`,
+                  contract,
                 },
-                populate: "*",
-                publicationState: "preview",
               });
-              let token = tokens.results.at(0);
-              if (!token) {
-                token = await tokenSvc.create({
-                  data: {
-                    tokenId: `${tokenId}`,
-                    slug: `${contract.slug}-${tokenId}`,
-                    contract,
-                  },
-                });
-              }
+            }
 
-              // Get the sender's wallet
-              let senderWallets = await walletSvc.find({
-                filters: { address: from },
+            // Get the sender's wallet
+            let senderWallets = await walletSvc.find({
+              filters: { address: from },
+            });
+
+            if (senderWallets.results.length < 1) {
+              // Create a new wallet for the sender if it doesn't exist
+              await walletSvc.create({
+                data: { address: from, network, managed: false },
+              });
+            }
+
+            // Get the receiver's wallet
+            let receiverWallets = await walletSvc.find({
+              filters: { address: to },
+            });
+
+            let receiverWallet;
+            if (receiverWallets.results.length < 1) {
+              // Create a new wallet for the receiver if it doesn't exist
+              receiverWallet = await walletSvc.create({
+                data: { address: to, network, managed: false },
+              });
+            } else receiverWallet = receiverWallets.results.at(0);
+
+            if (token.wallet?.id != receiverWallet.id) {
+              // Update the token ownership in the DB
+              await tokenSvc.update(token.id, {
+                data: {
+                  wallet: receiverWallet,
+                  publishedAt: token.publishedAt ?? new Date().toISOString(),
+                },
               });
 
-              if (senderWallets.results.length < 1) {
-                // Create a new wallet for the sender if it doesn't exist
-                await walletSvc.create({
-                  data: { address: from, network, managed: false },
-                });
-              }
-
-              // Get the receiver's wallet
-              let receiverWallets = await walletSvc.find({
-                filters: { address: to },
-              });
-
-              let receiverWallet;
-              if (receiverWallets.results.length < 1) {
-                // Create a new wallet for the receiver if it doesn't exist
-                receiverWallet = await walletSvc.create({
-                  data: { address: to, network, managed: false },
-                });
-              } else receiverWallet = receiverWallets.results.at(0);
-
-              if (token.wallet?.id != receiverWallet.id) {
-                // Update the token ownership in the DB
-                await tokenSvc.update(token.id, {
-                  data: {
-                    wallet: receiverWallet,
-                    publishedAt: token.publishedAt ?? new Date().toISOString(),
-                  },
-                });
-
-                if (entitySvc && contract.autoPublishEntity === true) {
-                  const entity = await getTokenEntity(contract, tokenId);
-                  if (entity) {
-                    await entitySvc.update(entity.id, {
-                      data: {
-                        token: token,
-                        publishedAt:
-                          token.publishedAt ?? new Date().toISOString(),
-                      },
-                    });
-                  }
+              if (entitySvc && contract.autoPublishEntity === true) {
+                const entity = await getTokenEntity(contract, tokenId);
+                if (entity) {
+                  await entitySvc.update(entity.id, {
+                    data: {
+                      token: token,
+                      publishedAt:
+                        token.publishedAt ?? new Date().toISOString(),
+                    },
+                  });
                 }
               }
             }
           }
-          eventCount += events.length;
-          await updateContractDetails(
-            this,
-            contract.id,
-            smartContract,
-            currentBlock
-          );
         }
+        eventCount += events.length;
+        await updateContractDetails(
+          this,
+          contract.id,
+          smartContract,
+          currentBlock
+        );
       }
+
       isSyncing = false;
       return `${networks.results.length} networks synced, ${eventCount} events`;
     } else {
