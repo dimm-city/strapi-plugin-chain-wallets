@@ -4,6 +4,9 @@ const { TYPE_TOKEN, NAME_META_EXTENDER } = require("../consts");
 
 const path = require("path");
 const fs = require("fs");
+
+
+
 /**
  * metadata service
  */
@@ -43,6 +46,7 @@ module.exports = createCoreService(TYPE_TOKEN, ({ strapi }) => ({
         }
         const extenderName =
           token.contract.metadataExtender ?? NAME_META_EXTENDER;
+
         if (entitySvc[extenderName] instanceof Function) {
           result = await entitySvc[extenderName](token, entity);
         }
@@ -68,10 +72,12 @@ module.exports = createCoreService(TYPE_TOKEN, ({ strapi }) => ({
       token = tokens.results.at(0);
     }
 
+    const imagePathBase = strapi.plugin('chain-wallets').config('imagePath') ?? ".tokens";
+
     //ToDo allow for different image loader/strategy
     const imagePath = path.join(
       path.resolve("."),
-      `.tokens/${token.contract.slug}/${token.tokenId}.png`
+      `${imagePathBase}/${token.contract.slug}/${token.tokenId}.png`
     );
 
     // Check if the file exists

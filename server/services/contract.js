@@ -72,7 +72,7 @@ async function importTokens(contractId, zipFile) {
 
       const tokens = await tokenSvc.find({
         filters: {
-          slug: `${contract.slug}-${tokenId}`
+          slug: `${contract.slug}-${tokenId}`,
         },
       });
 
@@ -110,7 +110,27 @@ async function importTokens(contractId, zipFile) {
   // Remove the temporary files
   fs.rmSync(tempFolderPath, { recursive: true });
 }
+function getEntityService(contract) {
+  if (contract?.entityType) {
+    return strapi.services[contract.entityType];
+  }
+  return null;
+}
+async function getTokenEntity(contract, tokenId) {
+  const entitySvc = getEntityService(contract);
+  if (entitySvc) {
+    const x = await entitySvc.find({
+      filters: {
+        tokenId: `${contract.slug}-${tokenId}`,       
+      },
+      publicationState: 'preview'
+    });
 
+    if (x.results?.length > 0) return x.results.at(0);
+  }
+
+  return null;
+}
 module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
   getSmartContract: createContractInstance,
   importTokens,
@@ -128,6 +148,7 @@ module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
       const walletSvc = strapi.service(TYPE_WALLET);
       const tokenSvc = strapi.service(TYPE_TOKEN);
 
+      //ToDo: refactor to query only contracts that are enabled
       const networks = await networkSvc.find({
         filters: {
           publishedAt: {
@@ -145,10 +166,10 @@ module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
       for (let index = 0; index < networks.results.length; index++) {
         const network = networks.results[index];
 
-        for (const contract of network.contracts) {
+        for (const contract of network.contracts.filter(c => c.enableSync === true)) {
           const smartContract = await this.getSmartContract(contract);
           const currentBlock = await smartContract.provider.getBlockNumber();
-
+          const entitySvc = getEntityService(contract);
           // Get the current transaction count for the contract
           const events = await smartContract.queryFilter(
             "Transfer",
@@ -215,6 +236,19 @@ module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
                     publishedAt: token.publishedAt ?? new Date().toISOString(),
                   },
                 });
+
+                if (entitySvc && contract.autoPublishEntity === true) {
+                  const entity = await getTokenEntity(contract, tokenId);
+                  if (entity) {
+                    await entitySvc.update(entity.id, {
+                      data: {
+                        token: token,
+                        publishedAt:
+                          token.publishedAt ?? new Date().toISOString(),
+                      },
+                    });
+                  }
+                }
               }
             }
           }

@@ -169,6 +169,21 @@
       },
       "type": "integer"
     },
+    "enableSync": {
+      "type": "boolean",
+      "default": false,
+      "private": true
+    },
+    "replaceMediaUrls": {
+      "type": "boolean",
+      "default": false,
+      "private": true
+    },
+    "autoPublishEntity": {
+      "type": "boolean",
+      "default": true,
+      "private": true
+    },
     "entityType": {
       "pluginOptions": {
         "i18n": {

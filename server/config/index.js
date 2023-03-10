@@ -1,6 +1,8 @@
-'use strict';
+"use strict";
 
 module.exports = {
-  default: {},
+  default: ({ env }) => ({
+    imagePath: env("CW_IMAGE_PATH") ?? ".tokens",
+  }),
   validator() {},
 };

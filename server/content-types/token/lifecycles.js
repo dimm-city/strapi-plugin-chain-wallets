@@ -1,18 +1,30 @@
 const { TYPE_CONTRACT, NAME_ENTITY_INIT } = require("../../consts");
-
+const { formatMediaUrl } = require("../../shared/formatters");
 module.exports = {
   async beforeCreate(event) {
     const { data } = event.params;
 
-    //ToDo: refactor to only query if contract is null
-
     if (data?.contract?.id || data?.contract?.connect?.length > 0) {
       const svc = strapi.service(TYPE_CONTRACT);
+      //ToDo: refactor to only query if contract is null
       const contract = await svc.findOne(
         data?.contract?.id ?? data.contract.connect[0]?.id
       );
       if (contract?.slug && !data.slug?.startsWith(contract.slug)) {
         data.slug = `${contract.slug}-${data.tokenId}`;
+      }
+
+      if (contract.replaceMediaUrls === true) {
+        data.thumbnail_uri = formatMediaUrl(
+          data.contract.slug,
+          data.tokenId,
+          "_thumbnail"
+        );
+        data.image = formatMediaUrl(data.contract.slug, data.tokenId);
+        data.full_resolution_uri = formatMediaUrl(
+          data.contract.slug,
+          data.tokenId
+        );
       }
     }
   },
