@@ -74,19 +74,23 @@ async function importTokens(contractId, zipFile) {
         filters: {
           slug: `${contract.slug}-${tokenId}`,
         },
-        publicationState: 'preview'
+        publicationState: "preview",
       });
 
       if (tokens?.results?.length === 0) {
-        await tokenSvc.create({
-          data: {
-            contract,
-            tokenId: tokenId,
-            slug: `${contract.slug}-${tokenId}`,
-            metadata: jsonContent,
-            publishedAt: null,
-          },
-        });
+        try {
+          await tokenSvc.create({
+            data: {
+              contract,
+              tokenId: tokenId,
+              slug: `${contract.slug}-${tokenId}`,
+              metadata: jsonContent,
+              publishedAt: null,
+            },
+          });
+        } catch (error) {
+          strapi.log.error('Duplicate token', tokens, error);
+        }
       } else {
         await tokenSvc.update(tokens.results.at(0).id, {
           data: {

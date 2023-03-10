@@ -16,13 +16,13 @@ module.exports = {
       }
 
       if (contract.replaceMediaUrls === true) {
-        data.thumbnail_uri = formatMediaUrl(
+        data.metadata.thumbnail_uri = formatMediaUrl(
           data.contract.slug,
           data.tokenId,
           "_thumbnail"
         );
-        data.image = formatMediaUrl(data.contract.slug, data.tokenId);
-        data.full_resolution_uri = formatMediaUrl(
+        data.metadata.image = formatMediaUrl(data.contract.slug, data.tokenId);
+        data.metadata.full_resolution_uri = formatMediaUrl(
           data.contract.slug,
           data.tokenId
         );
@@ -52,6 +52,7 @@ module.exports = {
               filters: {
                 tokenId: result.slug,
               },
+              publicationState: "preview"
             });
 
             if (entity?.results?.length === 0) {
