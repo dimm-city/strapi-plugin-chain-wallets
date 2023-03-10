@@ -74,6 +74,7 @@ async function importTokens(contractId, zipFile) {
         filters: {
           slug: `${contract.slug}-${tokenId}`,
         },
+        publicationState: 'preview'
       });
 
       if (tokens?.results?.length === 0) {
@@ -97,10 +98,12 @@ async function importTokens(contractId, zipFile) {
       file.type === "File" &&
       path.extname(file.path).match(/\.(jpeg|jpg|png|mp4)$/)
     ) {
+      const imagePathBase =
+        strapi.plugin("chain-wallets").config("imagePath") ?? ".tokens";
       // Save the image file to the server
       const imagePath = path.join(
-        rootDir,
-        `.tokens/${contract.slug}/${file.path}`
+        imagePathBase,
+        `${contract.slug}/${file.path}`
       );
       fs.mkdirSync(path.dirname(imagePath), { recursive: true });
       fs.writeFileSync(imagePath, await file.buffer());
