@@ -5,6 +5,31 @@ const { TYPE_TOKEN, NAME_META_EXTENDER } = require("../consts");
 const path = require("path");
 const fs = require("fs");
 
+async function mergeMetadata(token) {
+  let result = token.metadata;
+
+  if (token.contract.entityType) {
+    let entities = await strapi.entityService.findMany(token.contract.entityType, {
+      filters: {
+        token: {
+          id: token.id,
+        },
+      },
+    });
+    const metaSvc = strapi.services[token.contract.metadataService];
+
+    if (
+      entities?.length > 0 &&
+      metaSvc[NAME_META_EXTENDER] instanceof Function
+    ) {
+      const entity = entities.at(0);
+
+      result = await metaSvc[NAME_META_EXTENDER](token, entity);
+    }
+  }
+  return result;
+}
+
 /**
  * metadata service
  */
@@ -25,30 +50,7 @@ module.exports = createCoreService(TYPE_TOKEN, ({ strapi }) => ({
 
     if (tokens?.results.length > 0) {
       const token = tokens.results.at(0);
-      result = token?.metadata ?? result;
-
-      const entitySvc = strapi.services[token.contract.entityType];
-
-      if (entitySvc) {
-        let entities = await entitySvc.find({
-          filters: {
-            token: {
-              id: token.id,
-            },
-          },
-        });
-
-        let entity;
-        if (entities?.results.length > 0) {
-          entity = entities.results.at(0);
-        }
-        const extenderName =
-          token.contract.metadataExtender ?? NAME_META_EXTENDER;
-
-        if (entitySvc[extenderName] instanceof Function) {
-          result = await entitySvc[extenderName](token, entity);
-        }
-      }
+      result = (await mergeMetadata(token)) ?? token?.metadata ?? result;
     } else {
       result = null;
     }
@@ -78,13 +80,12 @@ module.exports = createCoreService(TYPE_TOKEN, ({ strapi }) => ({
 
     fs.stat(imagePath, function (err, stat) {
       if (err == null) {
-        console.log("File exists");
+        console.debug("File exists");
       } else if (err.code === "ENOENT") {
         // file does not exist
-        console.log("file does not exist", imagePath);
-       
+        console.warn("file does not exist", imagePath);
       } else {
-        console.log("Some other error: ", err.code);
+        console.warn("error reading file: ", err.code);
       }
     });
 

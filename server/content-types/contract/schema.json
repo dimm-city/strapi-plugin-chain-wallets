@@ -192,15 +192,7 @@
       },
       "type": "string"
     },
-    "metadataExtender": {
-      "pluginOptions": {
-        "i18n": {
-          "localized": false
-        }
-      },
-      "type": "string"
-    },
-    "entityInitializer": {
+    "metadataService": {
       "pluginOptions": {
         "i18n": {
           "localized": false
