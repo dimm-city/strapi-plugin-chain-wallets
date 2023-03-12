@@ -76,8 +76,16 @@ module.exports = {
       },
       {
         method: "GET",
-        path: "/wallets/verification-message",
-        handler: "chain-wallet.getVerificationMessage",
+        path: "/auth/verification-message",
+        handler: "authentication.getVerificationMessage",
+        config: {
+          policies: [],
+        },
+      },
+      {
+        method: "POST",
+        path: "/auth/login",
+        handler: "authentication.login",
         config: {
           policies: [],
         },

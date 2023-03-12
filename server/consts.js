@@ -3,6 +3,7 @@ const TYPE_NETWORK = "plugin::chain-wallets.chain-network";
 const TYPE_TOKEN = "plugin::chain-wallets.chain-token";
 const TYPE_WALLET = "plugin::chain-wallets.chain-wallet";
 const TYPE_METADATA = "plugin::chain-wallets.chain-metadata";
+const TYPE_AUTHENTICATION = "plugin::chain-wallets.authentication";
 
 const NAME_ENTITY_INIT = "initializeEntity";
 const NAME_META_EXTENDER = "extendTokenMetadata";
@@ -15,4 +16,5 @@ module.exports = {
   TYPE_NETWORK,
   TYPE_WALLET,
   TYPE_TOKEN,
+  TYPE_AUTHENTICATION
 };

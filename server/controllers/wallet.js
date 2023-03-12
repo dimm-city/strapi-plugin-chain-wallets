@@ -10,7 +10,7 @@ async function attachUserWallet(ctx) {
 
     const signature = ctx.header.sig;
     const service = strapi.service(TYPE_WALLET);
-    const message = "Attach this wallet"; // service.getVerificationMessage();    
+    const message = "Attach this wallet";
     const address = service.getSigner(message, signature);
     const wallet = await service.getOrCreateWallet(network, address);
     let result = {
@@ -51,10 +51,6 @@ async function detachUserWallet(ctx) {
   }
 }
 
-function getVerificationMessage() {
-  //TODO: pull from plugin settings
-  return "Sign this message to verify wallet ownership.";
-}
 async function getUserWallets(ctx) {
   try {
     if (ctx.state.user?.id == null)
@@ -75,6 +71,5 @@ async function getUserWallets(ctx) {
 module.exports = {
   attachUserWallet,
   detachUserWallet,
-  getVerificationMessage,
   getUserWallets,
 };
