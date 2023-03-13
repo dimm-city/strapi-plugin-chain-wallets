@@ -17,7 +17,7 @@ async function createContractInstance(contract) {
   //ToDo switch to JsonRpcProvider (AVAX) https://docs.infura.io/infura/networks/avalanche-c-chain/how-to/choose-a-network
   const provider = new ethers.providers.InfuraProvider(
     contract?.network?.name ?? "homestead",
-    process.env.provider_project_id
+    strapi.plugin("chain-wallets").config("infuraProjectId")
   );
 
   // Get the contract object
