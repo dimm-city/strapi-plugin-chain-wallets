@@ -14,11 +14,9 @@
       "updatedAt",
       "createdBy",
       "updatedBy",
-      "abi",
       "entityType",
       "metadataExtender",
-      "entityInitializer",
-      "metadata"
+      "entityInitializer"
     ]
   },
   "pluginOptions": {
