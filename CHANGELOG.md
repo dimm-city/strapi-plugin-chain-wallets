@@ -10,3 +10,4 @@ v0.1.1
 
 v0.2.0
 * Removed Network entity and associated references
+* Fixed bugs in token lifecycle and contract service

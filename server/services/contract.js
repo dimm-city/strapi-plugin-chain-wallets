@@ -24,14 +24,14 @@ async function createContractInstance(contract) {
 
   return smartContract;
 }
-async function updateContractDetails(
-  instance,
-  id,
-  smartContract,
-  currentBlock
-) {
-  const totalSupply = await smartContract.totalSupply();
-  await instance.update(id, {
+async function updateContractDetails(id, smartContract, currentBlock) {
+  let totalSupply = 0;
+  try {
+    totalSupply = await smartContract.totalSupply();
+  } catch {
+    strapi.log.warn(`Could not get total supply for contract: ${id}`);
+  }
+  await strapi.service(TYPE_CONTRACT).update(id, {
     data: {
       totalSupply: totalSupply,
       lastSynced: currentBlock,
@@ -165,7 +165,7 @@ async function syncContract(contract) {
   const walletSvc = strapi.service(TYPE_WALLET);
   const tokenSvc = strapi.service(TYPE_TOKEN);
 
-  const smartContract = await getSmartContract(contract);
+  const smartContract = await createContractInstance(contract);
   const currentBlock = await smartContract.provider.getBlockNumber();
   const entitySvc = getEntityService(contract);
   // Get the current transaction count for the contract
@@ -205,7 +205,10 @@ async function syncContract(contract) {
       await walletSvc.getOrCreateWallet(contract.chain, from);
 
       // Get the receiver's wallet
-      let receiverWallet = await walletSvc.getOrCreateWallet(chain, to);
+      let receiverWallet = await walletSvc.getOrCreateWallet(
+        contract.chain,
+        to
+      );
 
       if (token.wallet?.id != receiverWallet.id) {
         // Update the token ownership in the DB
@@ -230,7 +233,7 @@ async function syncContract(contract) {
       }
     }
   }
-  await updateContractDetails(this, contract.id, smartContract, currentBlock);
+  await updateContractDetails(contract.id, smartContract, currentBlock);
   return events.length;
 }
 

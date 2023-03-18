@@ -15,6 +15,8 @@ module.exports = {
         data.slug = `${contract.slug}-${data.tokenId}`;
       }
 
+      data.metadata ??= {};
+      
       if (contract.replaceMediaUrls === true) {
         data.metadata.thumbnail_uri = formatMediaUrl(
           data.contract.slug,
