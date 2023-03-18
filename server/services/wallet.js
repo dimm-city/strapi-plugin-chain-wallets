@@ -64,7 +64,7 @@ module.exports = createCoreService(TYPE_WALLET, (ctx) => ({
       filters: {
         user: { id: user.id },
       },
-      fields: ["id", "address", "chain", "name", "managed", "primary"],
+     // fields: ["id", "address", "chain", "name", "managed", "primary"],
       populate: {
         tokens: {
           fields: ["id", "tokenId", "metadata"],

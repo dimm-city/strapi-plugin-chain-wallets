@@ -51,8 +51,8 @@ async function mintToken(slug, toAddress) {
   // Wait for the transaction to be confirmed
   const receipt = await tx.wait();
 
-  //Allow to run in background
-  contractSvc.syncContract(contract);
+  //TODO: Allow to run in background or move out of function
+  await contractSvc.syncContract(contract);
 
   // Extract the token ID from the event data in the transaction receipt
   const tokenId = receipt.events[0]?.args?.tokenId?.toString();
