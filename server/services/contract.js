@@ -33,6 +33,33 @@ async function createContractInstance(contract, wallet = null) {
   }
   return smartContract;
 }
+
+async function mintToken(slug, toAddress) {
+  const contractSvc = strapi.service("plugin::chain-wallets.chain-contract");
+
+  const { results } = await contractSvc.find({
+    filters: { slug: slug },
+    populate: { admin: true },
+  });
+  const contract = results.at(0);
+
+  const smartContract = await createContractInstance(contract, contract.admin);
+
+  //ToDo: allow this function to be overridden per contract, must return ether Transaction
+  const tx = await smartContract.safeMint(toAddress, "");
+
+  // Wait for the transaction to be confirmed
+  const receipt = await tx.wait();
+
+  //Allow to run in background
+  contractSvc.syncContract(contract);
+
+  // Extract the token ID from the event data in the transaction receipt
+  const tokenId = receipt.events[0]?.args?.tokenId?.toString();
+
+  return tokenId; 
+}
+
 async function updateContractDetails(id, smartContract, currentBlock) {
   let totalSupply = 0;
   try {
@@ -248,6 +275,7 @@ async function syncContract(contract) {
 
 module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
   getSmartContract: createContractInstance,
+  mintToken,
   importTokens,
   syncContracts,
   syncContract,

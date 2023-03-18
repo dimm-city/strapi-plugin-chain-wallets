@@ -163,6 +163,11 @@
       "relation": "oneToMany",
       "target": "plugin::chain-wallets.chain-wallet"
     },
+    "admin": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::chain-wallets.chain-wallet"
+    },
     "metadataBaseUri": {
       "pluginOptions": {
         "i18n": {

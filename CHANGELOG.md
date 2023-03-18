@@ -12,3 +12,4 @@ v0.2.0
 * Added ability to open managed wallet
 * Removed Network entity and associated references
 * Fixed bugs in token lifecycle and contract service
+* Added mint token*
