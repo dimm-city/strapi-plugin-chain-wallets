@@ -8,20 +8,29 @@ const unzipper = require("unzipper");
 
 let isSyncing = false;
 
-async function createContractInstance(contract) {
+async function createContractInstance(contract, wallet = null) {
   //ToDo switch to JsonRpcProvider (AVAX) https://docs.infura.io/infura/networks/avalanche-c-chain/how-to/choose-a-network
   const provider = new ethers.providers.InfuraProvider(
     contract.chain ?? "homestead",
     strapi.plugin("chain-wallets").config("infuraProjectId")
   );
 
-  // Get the contract object
-  const smartContract = new ethers.Contract(
-    contract.address,
-    contract.abi ?? ERC721,
-    provider
-  );
+  let smartContract;
+  if (wallet) {
+    const etherWallet = new ethers.Wallet(wallet.key, provider);
 
+    smartContract = new ethers.Contract(
+      contract.address,
+      contract.abi ?? ERC721,
+      etherWallet
+    );
+  } else {
+    smartContract = new ethers.Contract(
+      contract.address,
+      contract.abi ?? ERC721,
+      provider
+    );
+  }
   return smartContract;
 }
 async function updateContractDetails(id, smartContract, currentBlock) {
