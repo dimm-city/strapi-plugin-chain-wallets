@@ -1,6 +1,6 @@
 "use strict";
 
-const { TYPE_TOKEN, TYPE_WALLET } = require("../consts");
+const { TYPE_TOKEN } = require("../consts");
 
 /**
  * `token-exists` policy

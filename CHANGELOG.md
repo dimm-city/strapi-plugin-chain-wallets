@@ -7,3 +7,6 @@ v0.0.5
 
 v0.1.1
 * Allow abi and metadata to be returned in API calls
+
+v0.2.0
+* Removed Network entity and associated references

@@ -3,12 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const { createCoreService } = require("@strapi/strapi").factories;
 const ERC721 = require("../contracts/ERC721.json");
-const {
-  TYPE_NETWORK,
-  TYPE_WALLET,
-  TYPE_TOKEN,
-  TYPE_CONTRACT,
-} = require("../consts");
+const { TYPE_WALLET, TYPE_TOKEN, TYPE_CONTRACT } = require("../consts");
 const unzipper = require("unzipper");
 
 let isSyncing = false;
@@ -16,7 +11,7 @@ let isSyncing = false;
 async function createContractInstance(contract) {
   //ToDo switch to JsonRpcProvider (AVAX) https://docs.infura.io/infura/networks/avalanche-c-chain/how-to/choose-a-network
   const provider = new ethers.providers.InfuraProvider(
-    contract?.network?.name ?? "homestead",
+    contract.chain ?? "homestead",
     strapi.plugin("chain-wallets").config("infuraProjectId")
   );
 
@@ -89,7 +84,7 @@ async function importTokens(contractId, zipFile) {
             },
           });
         } catch (error) {
-          strapi.log.error('Duplicate token', tokens, error);
+          strapi.log.error("Duplicate token", tokens, error);
         }
       } else {
         await tokenSvc.update(tokens.results.at(0).id, {
@@ -117,6 +112,7 @@ async function importTokens(contractId, zipFile) {
   // Remove the temporary files
   fs.rmSync(tempFolderPath, { recursive: true });
 }
+
 function getEntityService(contract) {
   if (contract?.entityType) {
     return strapi.services[contract.entityType];
@@ -138,136 +134,109 @@ async function getTokenEntity(contract, tokenId) {
 
   return null;
 }
+async function syncContracts() {
+  if (!isSyncing) {
+    isSyncing = true;
+
+    const contractSvc = strapi.service(TYPE_CONTRACT);
+
+    //ToDo: refactor to query only contracts that are enabled
+    const contractResults = await contractSvc.find({
+      filters: {
+        enableSync: true,
+      },
+      publicationState: "live",
+    });
+    const contracts = contractResults.results;
+
+    let eventCount = 0;
+    strapi.log.info(`Found ${contracts.length} contracts to sync`);
+    for (const contract of contracts) {
+      eventCount += await syncContract(contract);
+    }
+
+    isSyncing = false;
+    return `${contracts.length} synced, ${eventCount} total events`;
+  } else {
+    return "Sync already in progress";
+  }
+}
+async function syncContract(contract) {
+  const walletSvc = strapi.service(TYPE_WALLET);
+  const tokenSvc = strapi.service(TYPE_TOKEN);
+
+  const smartContract = await getSmartContract(contract);
+  const currentBlock = await smartContract.provider.getBlockNumber();
+  const entitySvc = getEntityService(contract);
+  // Get the current transaction count for the contract
+  const events = await smartContract.queryFilter(
+    "Transfer",
+    contract.lastSynced ?? 0
+  );
+
+  // Check for new events
+  for (const event of events) {
+    if (event.event == "Transfer" && event.args) {
+      // Get the address of the sender and receiver
+      const from = event.args.from;
+      const to = event.args.to;
+
+      // Get the token ID transferred
+      const tokenId = event.args.tokenId.toString();
+      let tokens = await tokenSvc.find({
+        filters: {
+          slug: `${contract.slug}-${tokenId}`,
+        },
+        populate: "*",
+        publicationState: "preview",
+      });
+      let token = tokens.results.at(0);
+      if (!token) {
+        token = await tokenSvc.create({
+          data: {
+            tokenId: `${tokenId}`,
+            slug: `${contract.slug}-${tokenId}`,
+            contract,
+          },
+        });
+      }
+
+      // Create the sender's wallet if it does not exist
+      await walletSvc.getOrCreateWallet(contract.chain, from);
+
+      // Get the receiver's wallet
+      let receiverWallet = await walletSvc.getOrCreateWallet(chain, to);
+
+      if (token.wallet?.id != receiverWallet.id) {
+        // Update the token ownership in the DB
+        await tokenSvc.update(token.id, {
+          data: {
+            wallet: receiverWallet,
+            publishedAt: token.publishedAt ?? new Date().toISOString(),
+          },
+        });
+
+        if (entitySvc && contract.autoPublishEntity === true) {
+          const entity = await getTokenEntity(contract, tokenId);
+          if (entity) {
+            await entitySvc.update(entity.id, {
+              data: {
+                token: token,
+                publishedAt: token.publishedAt ?? new Date().toISOString(),
+              },
+            });
+          }
+        }
+      }
+    }
+  }
+  await updateContractDetails(this, contract.id, smartContract, currentBlock);
+  return events.length;
+}
+
 module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
   getSmartContract: createContractInstance,
   importTokens,
-
-  /**
-   * Function to check for transactions in multiple ERC-721 contracts and sync chain data to entities
-   * @description Used by cron to keep Strapi in sync with on-chain data
-   * @returns void
-   */
-  async syncContracts() {
-    if (!isSyncing) {
-      isSyncing = true;
-
-      const contractSvc = strapi.service(TYPE_CONTRACT);
-      const walletSvc = strapi.service(TYPE_WALLET);
-      const tokenSvc = strapi.service(TYPE_TOKEN);
-
-      //ToDo: refactor to query only contracts that are enabled
-      const contractResults = await contractSvc.find({
-        filters: {
-          enableSync: true,
-        },
-        populate: {
-          network: true,
-        },
-        publicationState: "live",
-      });
-      const contracts = contractResults.results;
-
-      let eventCount = 0;
-      strapi.log.info(`Found ${contracts.length} contracts to sync`);
-      for (const contract of contracts) {
-        const smartContract = await this.getSmartContract(contract);
-        const currentBlock = await smartContract.provider.getBlockNumber();
-        const entitySvc = getEntityService(contract);
-        // Get the current transaction count for the contract
-        const events = await smartContract.queryFilter(
-          "Transfer",
-          contract.lastSynced ?? 0
-        );
-
-        // Check for new events
-        for (const event of events) {
-          if (event.event == "Transfer" && event.args) {
-            // Get the address of the sender and receiver
-            const from = event.args.from;
-            const to = event.args.to;
-
-            // Get the token ID transferred
-            const tokenId = event.args.tokenId.toString();
-            let tokens = await tokenSvc.find({
-              filters: {
-                slug: `${contract.slug}-${tokenId}`,
-              },
-              populate: "*",
-              publicationState: "preview",
-            });
-            let token = tokens.results.at(0);
-            if (!token) {
-              token = await tokenSvc.create({
-                data: {
-                  tokenId: `${tokenId}`,
-                  slug: `${contract.slug}-${tokenId}`,
-                  contract,
-                },
-              });
-            }
-
-            // Get the sender's wallet
-            let senderWallets = await walletSvc.find({
-              filters: { address: from },
-            });
-
-            if (senderWallets.results.length < 1) {
-              // Create a new wallet for the sender if it doesn't exist
-              await walletSvc.create({
-                data: { address: from, network, managed: false },
-              });
-            }
-
-            // Get the receiver's wallet
-            let receiverWallets = await walletSvc.find({
-              filters: { address: to },
-            });
-
-            let receiverWallet;
-            if (receiverWallets.results.length < 1) {
-              // Create a new wallet for the receiver if it doesn't exist
-              receiverWallet = await walletSvc.create({
-                data: { address: to, network, managed: false },
-              });
-            } else receiverWallet = receiverWallets.results.at(0);
-
-            if (token.wallet?.id != receiverWallet.id) {
-              // Update the token ownership in the DB
-              await tokenSvc.update(token.id, {
-                data: {
-                  wallet: receiverWallet,
-                  publishedAt: token.publishedAt ?? new Date().toISOString(),
-                },
-              });
-
-              if (entitySvc && contract.autoPublishEntity === true) {
-                const entity = await getTokenEntity(contract, tokenId);
-                if (entity) {
-                  await entitySvc.update(entity.id, {
-                    data: {
-                      token: token,
-                      publishedAt:
-                        token.publishedAt ?? new Date().toISOString(),
-                    },
-                  });
-                }
-              }
-            }
-          }
-        }
-        eventCount += events.length;
-        await updateContractDetails(
-          this,
-          contract.id,
-          smartContract,
-          currentBlock
-        );
-      }
-
-      isSyncing = false;
-      return `${contracts.length} synced, ${eventCount} total events`;
-    } else {
-      return "Sync already in progress";
-    }
-  },
+  syncContracts,
+  syncContract,
 }));

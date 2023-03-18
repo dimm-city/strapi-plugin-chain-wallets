@@ -62,11 +62,23 @@
       },
       "type": "string"
     },
-    "network": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "plugin::chain-wallets.chain-network",
-      "inversedBy": "contracts"
+    "chain": {
+      "type": "enumeration",
+      "enum": [
+        "homestead",
+        "goerli",
+        "sepolia",
+        "arbitrum",
+        "arbitrum-goerli",
+        "avalanche-mainnet",
+        "avalanche-fuji",
+        "matic",
+        "maticmum",
+        "optimism",
+        "optimism-goerli"
+      ],
+      "default": "homestead",
+      "required": true
     },
     "tokens": {
       "type": "relation",

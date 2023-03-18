@@ -23,14 +23,27 @@
     ]
   },
   "pluginOptions": {},
-  "attributes": {
-    "network": {
-      "type": "relation",
-      "relation": "oneToOne",
-      "target": "plugin::chain-wallets.chain-network"
-    },
+  "attributes": {    
     "address": {
       "type": "string",
+      "required": true
+    },
+    "chain": {
+      "type": "enumeration",
+      "enum": [
+        "homestead",
+        "goerli",
+        "sepolia",
+        "arbitrum",
+        "arbitrum-goerli",
+        "avalanche-mainnet",
+        "avalanche-fuji",
+        "matic",
+        "maticmum",
+        "optimism",
+        "optimism-goerli"
+      ],
+      "default": "homestead",
       "required": true
     },
     "name": {
