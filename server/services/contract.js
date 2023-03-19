@@ -66,6 +66,16 @@ async function updateContractDetails(id, smartContract, currentBlock) {
     totalSupply = await smartContract.totalSupply();
   } catch {
     strapi.log.warn(`Could not get total supply for contract: ${id}`);
+
+    /*TODO: 
+     get count of tokens published for that contract
+     get price
+     get maxSupply
+     get Paused
+     get owner
+     get MetadataBaseUri
+    */
+
   }
   await strapi.service(TYPE_CONTRACT).update(id, {
     data: {
