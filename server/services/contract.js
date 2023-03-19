@@ -75,7 +75,6 @@ async function updateContractDetails(id, smartContract, currentBlock) {
      get owner
      get MetadataBaseUri
     */
-
   }
   await strapi.service(TYPE_CONTRACT).update(id, {
     data: {
@@ -243,7 +242,9 @@ async function syncContracts() {
     }
 
     isSyncing = false;
-    return `${contracts.length} synced, ${eventCount} total events`;
+    const msg = `${contracts.length} synced, ${eventCount} total events`;
+    strapi.log.info(msg);
+    return msg;
   } else {
     return "Sync already in progress";
   }
@@ -256,13 +257,14 @@ async function syncContract(contract) {
   const currentBlock = await smartContract.provider.getBlockNumber();
   const entitySvc = getEntityService(contract);
   // Get the current transaction count for the contract
+  strapi.log.info(`syncing contract: ${contract.slug}`);
   const events = await smartContract.queryFilter(
-    "Transfer",
-    contract.lastSynced ?? 0
+    "Transfer", contract.lastSynced ?? 0
   );
-
+  strapi.log.info(`found: ${events.length} since ${contract.lastSynced}`);
   // Check for new events
   for (const event of events) {
+    strapi.log.info(`found: ${event.event} at ${event.blockHash}`);
     if (event.event == "Transfer" && event.args) {
       // Get the address of the sender and receiver
       const from = event.args.from;
