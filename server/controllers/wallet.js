@@ -16,7 +16,7 @@ async function attachUserWallet(ctx) {
     let result = {
       error: "Failed to attach wallet.",
     };
-    if (address)
+    if (address) //ToDo: ensure the wallet is not attached to another account
       result = await service.attachUserWallet(wallet, ctx.state.user);
 
     ctx.body = result;

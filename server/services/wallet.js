@@ -12,13 +12,14 @@ module.exports = createCoreService(TYPE_WALLET, (ctx) => ({
     wallet.user = null;
     await super.update(wallet.id, { data: wallet });
   },
-  async createManagedUserWallet(chain, user) {
+  async createManagedUserWallet(user, chain) {
     const network = getNetwork(chain);
     const wallet = ethers.Wallet.createRandom();
 
     const walletEntity = await super.create({
       data: {
         managed: true,
+        primary: true,
         address: wallet.address,
         seed: wallet.mnemonic.phrase,
         key: wallet.privateKey,
@@ -59,12 +60,40 @@ module.exports = createCoreService(TYPE_WALLET, (ctx) => ({
 
     return signer;
   },
+  async getOrCreateUserWallet(user, chain) {
+    const wallets = await super.find({
+      filters: {
+        user: { id: user.id },
+        chain,
+      },
+      fields: ["id", "address", "chain", "name", "managed", "primary"],
+      populate: {
+        tokens: {
+          fields: ["id", "tokenId", "metadata"],
+          populate: {
+            contract: {
+              fields: ["id", "name", "slug", "entityType", "address", "chain"],
+            },
+          },
+        },
+      },
+    });
+
+    let wallet = wallets.results
+      .filter((w) => w.chain == chain)
+      .sort((a, b) => (a.primary ? 1 : -1))
+      .at(0);
+
+    if (!wallet) wallet = await this.createManagedUserWallet(user, chain);
+
+    return wallet;
+  },
   async getUserWallets(user) {
     const wallets = await super.find({
       filters: {
         user: { id: user.id },
       },
-      fields: ["id", "address", "chain", "name", "managed"],
+      fields: ["id", "address", "chain", "name", "managed", "primary"],
       populate: {
         tokens: {
           fields: ["id", "tokenId", "metadata"],
