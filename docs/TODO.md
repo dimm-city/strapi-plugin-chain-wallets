@@ -11,3 +11,4 @@
 * ContractService:updateAttributes - Update contract attributes from blockchain contract
 * ContractService:mintToken - Mint a token from a managed wallet
 * ContractService:getExtensions - Returns an object of all extension functions. ie. metadataExtender, entityInitializer, imageLoader
+* Set default permissions: https://github.com/strapi/strapi/blob/921d30961d6ba96cc098f2aea197350a49f990bd/packages/plugins/users-permissions/server/services/users-permissions.js

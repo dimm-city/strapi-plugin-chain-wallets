@@ -14,3 +14,7 @@ v0.2.0
 * Fixed bugs in token lifecycle and contract service
 * Added mint token*
 * Added getOrCreateUserWallet
+
+v0.2.1
+* Updated import tokens to use local path
+* Removed upload feature for now

@@ -57,7 +57,7 @@ async function mintToken(slug, toAddress) {
   // Extract the token ID from the event data in the transaction receipt
   const tokenId = receipt.events[0]?.args?.tokenId?.toString();
 
-  return tokenId; 
+  return tokenId;
 }
 
 async function updateContractDetails(id, smartContract, currentBlock) {
@@ -75,31 +75,34 @@ async function updateContractDetails(id, smartContract, currentBlock) {
   });
 }
 
-async function importTokens(contractId, zipFile) {
+async function importTokens(contractSlug) {
   const tokenSvc = strapi.service(TYPE_TOKEN);
   const contracts = await this.find({
     filters: {
-      slug: contractId,
+      slug: contractSlug,
     },
   });
 
   const contract = contracts?.results?.at(0);
-  const tempFolderName = "temp-" + Date.now();
+  const assetPathBase =
+    strapi.plugin("chain-wallets").config("assetPath") ?? ".tokens";
 
-  const rootDir = path.resolve(".");
-  const tempFolderPath = path.join(rootDir, tempFolderName);
-  fs.mkdirSync(tempFolderPath, {
-    recursive: true,
-  });
+  const directoryPath = path.join(assetPathBase, `${contract.slug}/json`);
 
-  const unzippedFiles = await unzipper.Open.file(zipFile.path);
+  try {
+    const files = fs.readdirSync(directoryPath);
 
-  // Parse and process each file in the zip archive
-  for (const file of unzippedFiles.files) {
-    if (file.type === "File" && path.extname(file.path) === ".json") {
-      // Parse the contents of the JSON file
-      const jsonContent = JSON.parse(await file.buffer());
-      const tokenId = path.basename(file.path, path.extname(file.path));
+    // Filter files that have a numeric filename and end with '.json'
+    const jsonFiles = files.filter((file) => {
+      return !isNaN(parseInt(file)) && path.extname(file) === ".json";
+    });
+
+    // Read each JSON file and process its contents
+    for (const file of jsonFiles) {
+      const filePath = path.join(directoryPath, file);
+      const data = fs.readFileSync(filePath);
+      const jsonData = JSON.parse(data);
+      const tokenId = path.basename(file, path.extname(file));
 
       const tokens = await tokenSvc.find({
         filters: {
@@ -112,10 +115,10 @@ async function importTokens(contractId, zipFile) {
         try {
           await tokenSvc.create({
             data: {
-              contract,
+              contract: contract,
               tokenId: tokenId,
               slug: `${contract.slug}-${tokenId}`,
-              metadata: jsonContent,
+              metadata: jsonData,
               publishedAt: null,
             },
           });
@@ -125,29 +128,67 @@ async function importTokens(contractId, zipFile) {
       } else {
         await tokenSvc.update(tokens.results.at(0).id, {
           data: {
-            metadata: jsonContent,
+            metadata: jsonData,
           },
         });
       }
-    } else if (
-      file.type === "File" &&
-      path.extname(file.path).match(/\.(jpeg|jpg|png|mp4)$/)
-    ) {
-      const imagePathBase =
-        strapi.plugin("chain-wallets").config("imagePath") ?? ".tokens";
-      // Save the image file to the server
-      const imagePath = path.join(
-        imagePathBase,
-        `${contract.slug}/${file.path}`
-      );
-      fs.mkdirSync(path.dirname(imagePath), { recursive: true });
-      fs.writeFileSync(imagePath, await file.buffer());
     }
+  } catch (err) {
+    console.log("Unable to read directory: " + err);
   }
-
-  // Remove the temporary files
-  fs.rmSync(tempFolderPath, { recursive: true });
 }
+
+// async function uploadTokenAssets(contractId, zipFile) {
+//   const contracts = await this.find({
+//     filters: {
+//       slug: contractId,
+//     },
+//   });
+
+//   const contract = contracts?.results?.at(0);
+//   const tempFolderName = "temp-" + Date.now();
+
+//   const rootDir = path.resolve(".");
+//   const tempFolderPath = path.join(rootDir, tempFolderName);
+//   fs.mkdirSync(tempFolderPath, {
+//     recursive: true,
+//   });
+
+//   const unzippedFiles = await unzipper.Open.file(zipFile.path);
+//   const assetPathBase =
+//     strapi.plugin("chain-wallets").config("assetPath") ?? ".tokens";
+
+//   // Parse and process each file in the zip archive
+//   for (const file of unzippedFiles.files) {
+//     if (file.type === "File" && path.extname(file.path) === ".json") {
+//       // Save the json file to the server
+//       const jsonPath = path.join(
+//         assetPathBase,
+//         `${contract.slug}/json/${file.path}`
+//       );
+
+//       fs.mkdirSync(path.dirname(jsonPath), { recursive: true });
+//       fs.renameSync(file.path, jsonPath);
+//       //fs.writeFileSync(jsonPath, await file.buffer());
+//     }
+
+//     if (
+//       file.type === "File" &&
+//       path.extname(file.path).match(/\.(jpeg|jpg|png|mp4)$/)
+//     ) {
+//       // Save the image file to the server
+//       const imagePath = path.join(
+//         assetPathBase,
+//         `${contract.slug}/images/${file.path}`
+//       );
+//       fs.mkdirSync(path.dirname(imagePath), { recursive: true });
+//       fs.writeFileSync(imagePath, await file.buffer());
+//     }
+//   }
+
+//   // Remove the temporary files
+//   fs.rmSync(tempFolderPath, { recursive: true });
+// }
 
 function getEntityService(contract) {
   if (contract?.entityType) {
@@ -276,6 +317,7 @@ async function syncContract(contract) {
 module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
   getSmartContract: createContractInstance,
   mintToken,
+  uploadTokenAssets,
   importTokens,
   syncContracts,
   syncContract,

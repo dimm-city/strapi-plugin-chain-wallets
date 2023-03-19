@@ -72,11 +72,11 @@ module.exports = createCoreService(TYPE_TOKEN, ({ strapi }) => ({
       token = tokens.results.at(0);
     }
 
-    const imagePathBase =
-      strapi.plugin("chain-wallets").config("imagePath") ?? ".tokens";
+    const assetPathBase =
+      strapi.plugin("chain-wallets").config("assetPath") ?? ".tokens";
 
     //ToDo allow for different image loader/strategy
-    const imagePath = `${imagePathBase}/${token.contract.slug}/${token.tokenId}.png`;
+    const imagePath = `${assetPathBase}/${token.contract.slug}/images/${token.tokenId}.png`;
 
     fs.stat(imagePath, function (err, stat) {
       if (err == null) {

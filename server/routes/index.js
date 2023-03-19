@@ -98,6 +98,14 @@ module.exports = {
           policies: [],
         },
       },
+      // {
+      //   method: "POST",
+      //   path: "/upload-tokens/:contract",
+      //   handler: "chain-contract.uploadTokenAssets",
+      //   config: {
+      //     policies: [],
+      //   },
+      // },
       {
         method: "GET",
         path: "/metadata/:contract/:tokenId",
