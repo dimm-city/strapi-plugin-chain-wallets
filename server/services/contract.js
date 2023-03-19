@@ -317,7 +317,7 @@ async function syncContract(contract) {
 module.exports = createCoreService(TYPE_CONTRACT, ({ strapi }) => ({
   getSmartContract: createContractInstance,
   mintToken,
-  uploadTokenAssets,
+  //uploadTokenAssets,
   importTokens,
   syncContracts,
   syncContract,
