@@ -2,32 +2,33 @@ const ethers = require("ethers");
 const path = require("path");
 const fs = require("fs");
 const { createCoreService } = require("@strapi/strapi").factories;
-const ERC721 = require("../contracts/ERC721.json");
-const { TYPE_WALLET, TYPE_TOKEN, TYPE_CONTRACT } = require("../consts");
+const ERC721Mintable = require("../abi/ERC721Mintable.json");
+const { TYPE_WALLET, TYPE_TOKEN, TYPE_CONTRACT, NAME_MINT_FUNCTION} = require("../consts");
 const unzipper = require("unzipper");
+
 
 let isSyncing = false;
 
 async function createContractInstance(contract, wallet = null) {
   //ToDo switch to JsonRpcProvider (AVAX) https://docs.infura.io/infura/networks/avalanche-c-chain/how-to/choose-a-network
-  const provider = new ethers.providers.InfuraProvider(
-    contract.chain ?? "homestead",
-    strapi.plugin("chain-wallets").config("infuraProjectId")
-  );
 
   let smartContract;
+    const provider = new ethers.providers.InfuraProvider(
+      contract.chain ?? "homestead",
+      strapi.plugin("chain-wallets").config("infuraProjectId")
+    );
   if (wallet) {
     const etherWallet = new ethers.Wallet(wallet.key, provider);
 
     smartContract = new ethers.Contract(
       contract.address,
-      contract.abi ?? ERC721,
+      contract.abi ?? ERC721Mintable,
       etherWallet
     );
   } else {
     smartContract = new ethers.Contract(
       contract.address,
-      contract.abi ?? ERC721,
+      contract.abi ?? ERC721Mintable,
       provider
     );
   }
@@ -43,13 +44,23 @@ async function mintToken(slug, toAddress) {
   });
   const contract = results.at(0);
 
-  const smartContract = await createContractInstance(contract, contract.admin);
-
+  let receipt;
+  const customSvc = strapi.services[contract.contractService];
   //ToDo: allow this function to be overridden per contract, must return ether Transaction
-  const tx = await smartContract.safeMint(toAddress, "");
+  if (
+    contract.contractService &&
+    customSvc &&
+    customSvc[NAME_MINT_FUNCTION] instanceof Function
+  ) {
+    receipt = await customSvc[NAME_MINT_FUNCTION](contract, toAddress);
+  } else {
+    const smartContract = await createContractInstance(
+      contract,
+      contract.admin
+    );
 
-  // Wait for the transaction to be confirmed
-  const receipt = await tx.wait();
+    receipt = await defaultMintStrategy(smartContract, toAddress);
+  }
 
   //TODO: Allow to run in background or move out of function
   await contractSvc.syncContract(contract);
@@ -58,6 +69,15 @@ async function mintToken(slug, toAddress) {
   const tokenId = receipt.events[0]?.args?.tokenId?.toString();
 
   return tokenId;
+}
+
+async function defaultMintStrategy(smartContract, toAddress) {
+  const tx = await smartContract.safeMint(toAddress, "");
+
+  // Wait for the transaction to be confirmed
+  const receipt = await tx.wait();
+
+  return receipt;
 }
 
 async function updateContractDetails(id, smartContract, currentBlock) {
@@ -259,7 +279,8 @@ async function syncContract(contract) {
   // Get the current transaction count for the contract
   strapi.log.info(`syncing contract: ${contract.slug}`);
   const events = await smartContract.queryFilter(
-    "Transfer", contract.lastSynced ?? 0
+    "Transfer",
+    contract.lastSynced ?? 0
   );
   strapi.log.info(`found: ${events.length} since ${contract.lastSynced}`);
   // Check for new events
