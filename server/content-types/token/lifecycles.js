@@ -66,6 +66,8 @@ module.exports = {
               newEntity.data = await metaSvc[NAME_ENTITY_INIT](result);
           }
 
+
+          newEntity.data.mainImage = data.mainImage;
           newEntity.data.token = result;
           newEntity.data.tokenId = result.slug;
 
@@ -86,6 +88,7 @@ module.exports = {
             updatedEntity.data = await metaSvc[NAME_ENTITY_INIT](result);
           }
 
+          updatedEntity.data.mainImage = data.mainImage;
           updatedEntity.data.name = entity[0].name;
           updatedEntity.data.token = result;
           updatedEntity.data.tokenId = result.slug;
