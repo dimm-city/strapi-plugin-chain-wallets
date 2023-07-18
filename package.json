@@ -30,7 +30,7 @@
     "unzipper": "^0.10.11"
   },
   "peerDependencies": {
-    "@strapi/strapi": "^4.5.0"
+    "@strapi/strapi": "^4.11.5"
   },
   "author": {
     "name": "founder3",

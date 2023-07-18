@@ -214,6 +214,14 @@
         }
       },
       "type": "string"
+    },
+    "contractService": {
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      },
+      "type": "string"
     }
   }
 }

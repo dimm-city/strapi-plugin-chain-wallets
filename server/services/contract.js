@@ -2,32 +2,36 @@ const ethers = require("ethers");
 const path = require("path");
 const fs = require("fs");
 const { createCoreService } = require("@strapi/strapi").factories;
-const ERC721 = require("../contracts/ERC721.json");
-const { TYPE_WALLET, TYPE_TOKEN, TYPE_CONTRACT } = require("../consts");
-const unzipper = require("unzipper");
+const ERC721Mintable = require("../abi/ERC721Mintable.json");
+const {
+  TYPE_WALLET,
+  TYPE_TOKEN,
+  TYPE_CONTRACT,
+  NAME_MINT_FUNCTION,
+} = require("../consts");
 
 let isSyncing = false;
 
 async function createContractInstance(contract, wallet = null) {
   //ToDo switch to JsonRpcProvider (AVAX) https://docs.infura.io/infura/networks/avalanche-c-chain/how-to/choose-a-network
+
+  let smartContract;
   const provider = new ethers.providers.InfuraProvider(
     contract.chain ?? "homestead",
     strapi.plugin("chain-wallets").config("infuraProjectId")
   );
-
-  let smartContract;
   if (wallet) {
     const etherWallet = new ethers.Wallet(wallet.key, provider);
 
     smartContract = new ethers.Contract(
       contract.address,
-      contract.abi ?? ERC721,
+      contract.abi ?? ERC721Mintable,
       etherWallet
     );
   } else {
     smartContract = new ethers.Contract(
       contract.address,
-      contract.abi ?? ERC721,
+      contract.abi ?? ERC721Mintable,
       provider
     );
   }
@@ -43,13 +47,23 @@ async function mintToken(slug, toAddress) {
   });
   const contract = results.at(0);
 
-  const smartContract = await createContractInstance(contract, contract.admin);
-
+  let receipt;
+  const customSvc = strapi.services[contract.contractService];
   //ToDo: allow this function to be overridden per contract, must return ether Transaction
-  const tx = await smartContract.safeMint(toAddress, "");
+  if (
+    contract.contractService &&
+    customSvc &&
+    customSvc[NAME_MINT_FUNCTION] instanceof Function
+  ) {
+    receipt = await customSvc[NAME_MINT_FUNCTION](contract, toAddress);
+  } else {
+    const smartContract = await createContractInstance(
+      contract,
+      contract.admin
+    );
 
-  // Wait for the transaction to be confirmed
-  const receipt = await tx.wait();
+    receipt = await defaultMintStrategy(smartContract, toAddress);
+  }
 
   //TODO: Allow to run in background or move out of function
   await contractSvc.syncContract(contract);
@@ -58,6 +72,15 @@ async function mintToken(slug, toAddress) {
   const tokenId = receipt.events[0]?.args?.tokenId?.toString();
 
   return tokenId;
+}
+
+async function defaultMintStrategy(smartContract, toAddress) {
+  const tx = await smartContract.safeMint(toAddress, "");
+
+  // Wait for the transaction to be confirmed
+  const receipt = await tx.wait();
+
+  return receipt;
 }
 
 async function updateContractDetails(id, smartContract, currentBlock) {
@@ -84,6 +107,48 @@ async function updateContractDetails(id, smartContract, currentBlock) {
   });
 }
 
+async function uploadTokenMedia(mediaPath, folder = null) {
+  try {
+    // Ensure the image file exists
+    if (!fs.existsSync(mediaPath)) {
+      console.error(`File not found: ${mediaPath}`);
+      return;
+    }
+
+    let type = "doc";
+    if (path.extname(mediaPath) === ".jpg") {
+      type = "image/jpeg";
+    } else if (path.extname(mediaPath) === ".png") {
+      type = "image/png";
+    } else if (path.extname(mediaPath) === ".mp4") {
+      type = "video/mp4";
+    } else if (path.extname(mediaPath) === ".mp3") {
+      type = "audio/mp3";
+    }
+    const fileName = path.basename(mediaPath);
+
+    const stats = fs.statSync(mediaPath);
+
+    const uploadResult = await strapi.plugins.upload.services.upload.upload({
+      data: {
+        fileInfo: { folder: folder },
+        captoin: "Token",
+      },
+      files: {
+        path: mediaPath,
+        name: fileName,
+        type: type, // mime.lookup(filePath),
+        size: stats.size,
+      },
+    });
+
+    console.log(`New media created with ID: ${JSON.stringify(uploadResult)}`);
+    return uploadResult;
+  } catch (error) {
+    console.error(`An error occurred while uploading media: ${error.message}`);
+  }
+}
+
 async function importTokens(contractSlug) {
   const tokenSvc = strapi.service(TYPE_TOKEN);
   const contracts = await this.find({
@@ -97,6 +162,10 @@ async function importTokens(contractSlug) {
     strapi.plugin("chain-wallets").config("assetPath") ?? ".tokens";
 
   const directoryPath = path.join(assetPathBase, `${contract.slug}/json`);
+  const mediaDirectoryPath = path.join(
+    assetPathBase,
+    `${contract.slug}/images`
+  );
 
   try {
     const files = fs.readdirSync(directoryPath);
@@ -105,6 +174,23 @@ async function importTokens(contractSlug) {
     const jsonFiles = files.filter((file) => {
       return !isNaN(parseInt(file)) && path.extname(file) === ".json";
     });
+
+    const folderService = strapi.service("plugin::upload.folder");
+    const folders = await folderService.getStructure();
+    // Ensure the 'tokens' folder exists
+    let tokensFolder = folders.find((f) => f.name === "tokens");
+    if (tokensFolder == null) {
+      tokensFolder = await folderService.create({ name: "tokens" });
+    }
+
+    // Ensure the contract folder exists
+    let uploadFolder = folders.find((f) => f.name === contractSlug);
+    if (uploadFolder == null) {
+      uploadFolder = await folderService.create({
+        name: contractSlug,
+        parent: tokensFolder.id,
+      });
+    }
 
     // Read each JSON file and process its contents
     for (const file of jsonFiles) {
@@ -122,11 +208,24 @@ async function importTokens(contractSlug) {
 
       if (tokens?.results?.length === 0) {
         try {
+          const imageFilePath = path.join(mediaDirectoryPath, `${tokenId}.png`);
+          const imageInfo = await uploadTokenMedia(
+            imageFilePath,
+            uploadFolder.id
+          );
+
+          const videoFilePath = path.join(mediaDirectoryPath, `${tokenId}.mp4`);
+          let videoInfo = null;
+          if (fs.existsSync(videoFilePath)) {
+            videoInfo = await uploadTokenVideo(videoFilePath, uploadFolder.id);
+          }
           await tokenSvc.create({
             data: {
               contract: contract,
               tokenId: tokenId,
               slug: `${contract.slug}-${tokenId}`,
+              mainImage: imageInfo?.at(0)?.id,
+              mainVideo: videoInfo?.at(0)?.id,
               metadata: jsonData,
               publishedAt: null,
             },
@@ -259,7 +358,8 @@ async function syncContract(contract) {
   // Get the current transaction count for the contract
   strapi.log.info(`syncing contract: ${contract.slug}`);
   const events = await smartContract.queryFilter(
-    "Transfer", contract.lastSynced ?? 0
+    "Transfer",
+    contract.lastSynced ?? 0
   );
   strapi.log.info(`found: ${events.length} since ${contract.lastSynced}`);
   // Check for new events
