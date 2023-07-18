@@ -15,8 +15,8 @@ module.exports = {
         data.slug = `${contract.slug}-${data.tokenId}`;
       }
 
-      data.metadata = data.metadata ||  {};
-      
+      data.metadata = data.metadata || {};
+
       if (contract.replaceMediaUrls === true) {
         data.metadata.thumbnail_uri = formatMediaUrl(
           data.contract.slug,
@@ -45,12 +45,15 @@ module.exports = {
       }
 
       if (contract?.entityType && contract.autoPublishEntity) {
-        const entity = await strapi.entityService.findMany(contract.entityType, {
-          filters: {
-            tokenId: result.slug,
-          },
-          publicationState: "preview",
-        });
+        const entity = await strapi.entityService.findMany(
+          contract.entityType,
+          {
+            filters: {
+              tokenId: result.slug,
+            },
+            publicationState: "preview",
+          }
+        );
         if (entity?.length === 0) {
           let newEntity = {
             data: {
@@ -66,8 +69,12 @@ module.exports = {
               newEntity.data = await metaSvc[NAME_ENTITY_INIT](result);
           }
 
-
+          newEntity.data.name = entity[0].name;
+          
           newEntity.data.mainImage = data.mainImage;
+          newEntity.data.mainVideo = data.mainVideo;
+          newEntity.data.mainModel = data.mainModel;
+
           newEntity.data.token = result;
           newEntity.data.tokenId = result.slug;
 
@@ -85,14 +92,20 @@ module.exports = {
             const metaSvc = strapi.services[contract.metadataService];
 
             if (metaSvc && metaSvc[NAME_ENTITY_INIT] instanceof Function)
-            updatedEntity.data = await metaSvc[NAME_ENTITY_INIT](result);
+              updatedEntity.data = await metaSvc[NAME_ENTITY_INIT](result);
           }
 
           updatedEntity.data.mainImage = data.mainImage;
-          updatedEntity.data.name = entity[0].name;
+          updatedEntity.data.mainVideo = data.mainVideo;
+          updatedEntity.data.mainModel = data.mainModel;
+
           updatedEntity.data.token = result;
           updatedEntity.data.tokenId = result.slug;
-          await strapi.entityService.update(contract.entityType, id, updatedEntity);
+          await strapi.entityService.update(
+            contract.entityType,
+            id,
+            updatedEntity
+          );
         }
       }
     }
