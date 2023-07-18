@@ -23,7 +23,7 @@
     ]
   },
   "pluginOptions": {},
-  "attributes": {    
+  "attributes": {
     "address": {
       "type": "string",
       "required": true
