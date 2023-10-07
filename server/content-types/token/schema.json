@@ -1,6 +1,6 @@
 {
   "kind": "collectionType",
-  "collectionName": "chain-tokens",
+  "collectionName": "cw_tokens",
   "info": {
     "singularName": "chain-token",
     "pluralName": "chain-tokens",

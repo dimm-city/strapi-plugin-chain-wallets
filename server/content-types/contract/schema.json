@@ -1,6 +1,6 @@
 {
   "kind": "collectionType",
-  "collectionName": "chain-contracts",
+  "collectionName": "cw_contracts",
   "info": {
     "singularName": "chain-contract",
     "pluralName": "chain-contracts",
